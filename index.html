@@ -1,0 +1,1194 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>متابعة طلبات الشراء</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#eef2f0; --surface:#ffffff; --surface2:#f6f8f7; --line:#d9e2de;
+  --ink:#13211c; --muted:#5b6f66; --accent:#0f6b4f; --accent2:#0a4d38;
+  --accent-soft:#e3f0ea; --gold:#b7791f; --gold-soft:#fdf3d7;
+  --red:#b42318; --red-soft:#fdecea; --blue:#175cd3; --blue-soft:#eaf1fe;
+  --radius:14px; --shadow:0 10px 30px rgba(19,33,28,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0e1512; --surface:#17211c; --surface2:#1c2922; --line:#2c3f36;
+    --ink:#eef5f1; --muted:#a7bcb1; --accent:#2fbd8a; --accent2:#2fbd8a;
+    --accent-soft:#123527; --gold:#e3b341; --gold-soft:#332a10;
+    --red:#ff8a7a; --red-soft:#3a1712; --blue:#8ab4ff; --blue-soft:#16294d;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Tajawal","Cairo",system-ui,sans-serif;line-height:1.6}
+button,[role="button"],select,input,textarea{font-family:inherit}
+button,select,input:not([type="checkbox"]){min-height:44px}
+h1,h2,h3{font-family:"Cairo",sans-serif;line-height:1.3;margin:0}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 14px 48px}
+
+/* Header — بدون الدايرة البيضا */
+.hero{background:var(--accent2);color:#fff;border-radius:18px;padding:22px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hero h1{font-size:clamp(26px,4.5vw,38px);font-weight:900}
+.hero p{margin:6px 0 0;color:rgba(255,255,255,.86);font-size:15.5px;max-width:640px;position:relative;z-index:1}
+.hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;position:relative;z-index:1}
+.btn{border:1px solid transparent;border-radius:10px;padding:10px 16px;font-weight:800;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;text-decoration:none}
+.btn:active{transform:translateY(1px)}
+.btn-white{background:#fff;color:var(--accent2)}
+.btn-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.55)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-outline{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.btn-danger{background:var(--red-soft);color:var(--red);border-color:transparent}
+/* أزرار صغيرة */
+.btn-sm{min-height:24px;padding:4px 8px;font-size:11px;border-radius:6px}
+
+/* شريط المستخدم وحالة المزامنة */
+.user-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 14px;margin-top:14px;font-size:14px}
+.user-bar .who{font-weight:800}
+.user-bar .role-badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:800;background:var(--accent-soft);color:var(--accent);margin-inline-start:6px}
+.user-bar .role-badge.employee{background:var(--blue-soft);color:var(--blue)}
+.sync-status{color:var(--muted);font-size:13px;font-weight:700}
+.sync-status.ok{color:var(--accent)}
+.sync-status.err{color:var(--red)}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.stat b{display:block;font-family:"Cairo";font-size:28px;line-height:1.1}
+.stat span{color:var(--muted);font-size:13.5px;font-weight:700}
+@media(max-width:640px){.stats{grid-template-columns:1fr 1fr}}
+
+/* Cards / sections */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-top:14px}
+.card h2{font-size:20px;font-weight:800;margin-bottom:14px}
+#formOverlay{z-index:60}
+.form-modal{background:var(--surface);color:var(--ink);border-radius:16px;padding:20px;width:min(760px,100%);margin:auto 0;box-shadow:var(--shadow);max-height:calc(100vh - 28px);max-height:calc(100dvh - 28px);overflow-y:auto}
+.form-modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.form-modal-head h2{font-size:20px;font-weight:800;margin:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid .full{grid-column:1/-1}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.field label{display:block;font-weight:800;font-size:14px;margin-bottom:6px}
+.field input,.field textarea,.field select{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:15.5px}
+.field textarea{min-height:74px;resize:vertical}
+.field input:focus,.field textarea:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+fieldset{border:1.5px dashed var(--line);border-radius:12px;padding:12px;margin:0}
+legend{font-weight:800;font-size:14px;padding:0 6px;color:var(--accent)}
+/* خطوات منفصلة — كل خطوة لوحدها */
+.steps-box{border:1.5px dashed var(--line);border-radius:12px;padding:12px;margin-top:12px}
+.steps-box .steps-title{font-weight:800;font-size:14px;color:var(--accent);margin:0 0 10px}
+.step-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+@media(max-width:640px){.step-btns{grid-template-columns:1fr}}
+.step-btn{border:1.5px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:10px;padding:10px 8px;font-weight:800;font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.35}
+.step-btn small{font-weight:700;font-size:12px;color:var(--muted)}
+.step-btn.quotes{border-color:var(--gold)}
+.step-btn.decision{border-color:var(--blue)}
+.step-btn.exec{border-color:var(--accent)}
+.step-btn.open.quotes{background:var(--gold-soft)}
+.step-btn.open.decision{background:var(--blue-soft)}
+.step-btn.open.exec{background:var(--accent-soft)}
+.step-panel{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface2)}
+.step-panel[hidden]{display:none}
+.step-panel .panel-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+/* أزرار الخطوات في السجل — صغيرة */
+.step-actions{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.step-mini{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:4px 8px;font-weight:800;font-size:11px;cursor:pointer;text-align:right;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:24px;line-height:1.3}
+.step-mini span{font-weight:700;color:var(--muted);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.step-mini.quotes{border-color:var(--gold)}
+.step-mini.decision{border-color:var(--blue)}
+.step-mini.exec{border-color:var(--accent)}
+.step-mini.has.quotes{background:var(--gold-soft)}
+.step-mini.has.decision{background:var(--blue-soft)}
+.step-mini.has.exec{background:var(--accent-soft)}
+.card-steps{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
+@media(max-width:420px){.card-steps{grid-template-columns:1fr}}
+.card-steps .step-mini{flex-direction:column;align-items:flex-start;gap:0}
+.form-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.msg{display:none;border-radius:10px;padding:10px 14px;font-weight:700;font-size:14.5px;margin-top:12px}
+.msg.ok{display:block;background:var(--accent-soft);color:var(--accent)}
+.msg.err{display:block;background:var(--red-soft);color:var(--red)}
+
+/* Toolbar */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+.toolbar .search{flex:1 1 240px}
+.toolbar label{display:block;font-weight:800;font-size:13.5px;margin-bottom:6px}
+.toolbar input,.toolbar select{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;min-height:38px;font-weight:800;font-size:13.5px;cursor:pointer}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Table */
+.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:1020px;background:var(--surface)}
+th,td{border:1px solid var(--line);padding:10px 10px;font-size:14px;vertical-align:top;text-align:right}
+thead th{background:var(--accent-soft);color:var(--ink);font-family:"Cairo";font-size:13.5px;text-align:center;vertical-align:middle}
+tbody td.num,th.num{text-align:center;white-space:nowrap}
+td.date{white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums}
+td.desc{min-width:200px;white-space:pre-wrap}
+.badge{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:800;white-space:nowrap}
+.b-new{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+.b-quotes{background:var(--gold-soft);color:var(--gold)}
+.b-decision{background:var(--blue-soft);color:var(--blue)}
+.b-done{background:var(--accent-soft);color:var(--accent)}
+.row-actions{display:flex;gap:4px;flex-wrap:wrap}
+.empty{padding:34px 16px;text-align:center;color:var(--muted)}
+.empty b{display:block;font-size:17px;color:var(--ink);margin-bottom:4px}
+
+/* Mobile cards */
+.cards{display:none}
+.req-card{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;background:var(--surface2)}
+.req-card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.req-card .no{font-family:"Cairo";font-weight:900;font-size:17px}
+.req-card .desc{white-space:pre-wrap;margin:6px 0;font-size:15px}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:13.5px;margin-top:8px}
+.kv div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 9px}
+.kv span{display:block;color:var(--muted);font-size:12px;font-weight:700}
+.kv b{font-variant-numeric:tabular-nums}
+.req-card .notes{font-size:13.5px;color:var(--muted);margin-top:8px;white-space:pre-wrap}
+@media(max-width:760px){
+  .table-scroll{display:none}
+  .cards{display:block}
+}
+
+/* Print preview modal */
+.overlay{position:fixed;inset:0;background:rgba(10,20,16,.55);display:none;align-items:flex-start;justify-content:center;padding:14px;z-index:50;overflow:auto}
+.overlay.open{display:flex}
+.sheet{background:#fff;color:#111;width:min(1060px,100%);border-radius:10px;padding:18px;margin:auto 0}
+.sheet h2{text-align:center;font-size:22px}
+.sheet .meta{text-align:center;color:#444;font-size:13px;margin:4px 0 12px}
+#printArea{overflow-x:auto}
+.sheet table{min-width:0;width:100%;table-layout:fixed}
+.sheet th,.sheet td{border:1px solid #999;color:#111;word-wrap:break-word;overflow-wrap:anywhere;font-size:12.5px;padding:6px}
+.sheet thead th{background:#e8e8e8}
+.sheet .close-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
+.confirm-box{background:var(--surface);color:var(--ink);border-radius:14px;padding:20px;width:min(420px,100%);margin:auto 0;box-shadow:var(--shadow)}
+.confirm-box h3{font-size:18px;margin-bottom:6px}
+.confirm-box p{color:var(--muted);margin:0 0 16px;font-size:14.5px}
+
+/* شاشة الدخول */
+.auth-screen{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--bg)}
+.auth-screen[hidden]{display:none}
+.auth-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:22px;width:min(440px,100%)}
+.auth-card .auth-hero{background:var(--accent2);color:#fff;border-radius:12px;padding:18px 16px;margin-bottom:16px}
+.auth-card .auth-hero h1{font-size:24px;font-weight:900}
+.auth-card .auth-hero p{margin:4px 0 0;color:rgba(255,255,255,.85);font-size:14px}
+.auth-card .field{margin-bottom:12px}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+
+<!-- ============ شاشة الدخول ============ -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-hero">
+      <h1>متابعة طلبات الشراء</h1>
+    </div>
+    <form id="loginForm" novalidate>
+      <div class="field">
+        <label for="authEmail">البريد الإلكتروني *</label>
+        <input id="authEmail" type="email" placeholder="name@example.com" required dir="ltr" style="text-align:left">
+      </div>
+      <div class="field">
+        <label for="authPassword">كلمة السر *</label>
+        <input id="authPassword" type="password" placeholder="كلمة السر" required dir="ltr" style="text-align:left">
+      </div>
+      <button class="btn btn-accent" type="submit" id="authSubmitBtn" style="width:100%">دخول</button>
+      <div class="msg" id="authMsg" role="status"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ التطبيق ============ -->
+<div class="wrap" id="appWrap" hidden>
+
+  <header class="hero">
+    <h1>متابعة طلبات الشراء</h1>
+    <div class="hero-actions">
+      <button class="btn btn-white" id="toggleFormBtn" type="button" aria-expanded="false" aria-controls="formOverlay" aria-haspopup="dialog">＋ تسجيل طلب جديد</button>
+      <button class="btn btn-ghost" id="heroPrint" type="button">🖨️ طباعة السجل</button>
+      <button class="btn btn-ghost" id="heroExport" type="button">⬇️ تصدير Excel</button>
+      <button class="btn btn-ghost" id="heroRefresh" type="button">↻ تحديث</button>
+      <button class="btn btn-ghost" id="accountsBtn" type="button">⚙️ إدارة الحسابات</button>
+    </div>
+  </header>
+
+  <div class="user-bar">
+    <div><span class="who" id="userName">—</span><span class="role-badge" id="userRoleBadge">—</span></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <span class="sync-status" id="syncStatus">جاري الاتصال بقاعدة البيانات المشتركة…</span>
+      <button class="btn btn-outline btn-sm" id="logoutBtn" type="button">تسجيل الخروج</button>
+    </div>
+  </div>
+
+  <section class="stats" aria-label="إحصائيات">
+    <div class="stat"><b id="stTotal">0</b><span>إجمالي الطلبات</span></div>
+    <div class="stat"><b id="stDone">0</b><span>تم تنفيذها</span></div>
+    <div class="stat"><b id="stDecision">0</b><span>تم البت فيها</span></div>
+    <div class="stat"><b id="stProgress">0</b><span>قيد المتابعة</span></div>
+  </section>
+
+  <div class="overlay" id="formOverlay" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+   <div class="form-modal">
+    <div class="form-modal-head">
+      <h2 id="formTitle">تسجيل طلب شراء</h2>
+      <button class="btn btn-outline btn-sm" type="button" id="closeFormTopBtn" aria-label="إغلاق نافذة التسجيل">✕ إغلاق</button>
+    </div>
+    <form id="reqForm" novalidate>
+      <div class="grid">
+        <div class="field">
+          <label for="fNumber">رقم الطلب *</label>
+          <input id="fNumber" type="text" inputmode="text" placeholder="مثال: 2631142" required>
+        </div>
+        <div class="field">
+          <label for="fDate">تاريخ الطلب *</label>
+          <input id="fDate" type="date" required>
+        </div>
+        <div class="field full">
+          <label for="fDesc">وصف وبيانات الطلب *</label>
+          <textarea id="fDesc" placeholder="اكتب وصف الطلب وبياناته…" required></textarea>
+        </div>
+      </div>
+      <div class="steps-box" id="formStepsBox">
+        <div class="step-btns">
+          <button type="button" class="step-btn quotes" id="stepBtnQuotes" data-step-toggle="quotes" aria-expanded="false" aria-controls="panelQuotes">عروض الأسعار<small id="stepBtnQuotesState">غير مسجلة</small></button>
+          <button type="button" class="step-btn decision" id="stepBtnDecision" data-step-toggle="decision" aria-expanded="false" aria-controls="panelDecision">البت<small id="stepBtnDecisionState">غير مسجل</small></button>
+          <button type="button" class="step-btn exec" id="stepBtnExec" data-step-toggle="exec" aria-expanded="false" aria-controls="panelExec">التنفيذ<small id="stepBtnExecState">غير مسجل</small></button>
+        </div>
+        <div class="step-panel" id="panelQuotes" hidden>
+          <div class="field">
+            <label for="fQuotes">تاريخ عروض الأسعار</label>
+            <input id="fQuotes" type="date">
+          </div>
+          <div class="panel-actions">
+            <button type="button" class="btn btn-outline btn-sm" data-clear-step="quotes">مسح هذا التاريخ</button>
+            <button type="button" class="btn btn-outline btn-sm" data-close-step="quotes">إغلاق</button>
+          </div>
+        </div>
+        <div class="step-panel" id="panelDecision" hidden>
+          <div class="field">
+            <label for="fDecision">تاريخ البت</label>
+            <input id="fDecision" type="date">
+          </div>
+          <div class="panel-actions">
+            <button type="button" class="btn btn-outline btn-sm" data-clear-step="decision">مسح هذا التاريخ</button>
+            <button type="button" class="btn btn-outline btn-sm" data-close-step="decision">إغلاق</button>
+          </div>
+        </div>
+        <div class="step-panel" id="panelExec" hidden>
+          <div class="field">
+            <label for="fExec">تاريخ التنفيذ</label>
+            <input id="fExec" type="date">
+          </div>
+          <div class="panel-actions">
+            <button type="button" class="btn btn-outline btn-sm" data-clear-step="exec">مسح هذا التاريخ</button>
+            <button type="button" class="btn btn-outline btn-sm" data-close-step="exec">إغلاق</button>
+          </div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label for="fNotes">ملاحظات</label>
+        <textarea id="fNotes" placeholder="أي ملاحظات على الطلب…"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-accent" type="submit" id="saveBtn">حفظ الطلب</button>
+        <button class="btn btn-outline" type="button" id="cancelEdit" style="display:none">إلغاء التعديل</button>
+        <button class="btn btn-outline" type="reset" id="resetBtn">مسح الحقول</button>
+        <button class="btn btn-outline" type="button" id="closeFormBtn">إغلاق</button>
+      </div>
+      <div class="msg" id="formMsg" role="status"></div>
+    </form>
+   </div>
+  </div>
+
+  <section class="card">
+    <h2>سجل الطلبات</h2>
+    <div class="toolbar">
+      <div class="search">
+        <label for="q">بحث</label>
+        <input id="q" type="search" placeholder="رقم الطلب أو كلمة من الوصف…">
+      </div>
+      <div class="admin-only" id="importWrap">
+        <label for="importFile">استيراد من ملف Excel / CSV</label>
+        <input id="importFile" type="file" accept=".csv,.xls,.xlsx" style="padding:7px 10px">
+      </div>
+    </div>
+    <div class="chips" id="chips" role="group" aria-label="تصفية حسب الحالة">
+      <button type="button" class="chip active" data-f="all">الكل</button>
+      <button type="button" class="chip" data-f="new">مسجل</button>
+      <button type="button" class="chip" data-f="quotes">عروض الأسعار</button>
+      <button type="button" class="chip" data-f="decision">تم البت</button>
+      <button type="button" class="chip" data-f="done">منفذ</button>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
+      <button class="btn btn-accent" id="openPrint" type="button">🖨️ معاينة وطباعة السجل</button>
+      <button class="btn btn-outline" id="exportBtn" type="button">⬇️ تصدير Excel (CSV)</button>
+    </div>
+
+    <div class="table-scroll" style="margin-top:14px">
+      <table aria-label="جدول متابعة طلبات الشراء">
+        <thead>
+          <tr>
+            <th class="num" rowspan="2">م</th>
+            <th rowspan="2">رقم الطلب</th>
+            <th rowspan="2">تاريخ الطلب</th>
+            <th rowspan="2">وصف وبيانات الطلب</th>
+            <th colspan="3">موقف الطلب</th>
+            <th rowspan="2">الحالة</th>
+            <th rowspan="2">ملاحظات</th>
+            <th rowspan="2">إجراءات</th>
+          </tr>
+          <tr>
+            <th>تاريخ عروض الأسعار</th>
+            <th>تاريخ البت</th>
+            <th>تاريخ التنفيذ</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="cards" id="cards"></div>
+    <div class="empty" id="emptyBox" style="display:none"></div>
+  </section>
+
+  <!-- إدارة الحسابات — الأدمن فقط -->
+  <section class="card admin-only" id="accountsCard" hidden>
+    <h2>إدارة الحسابات</h2>
+    <form id="userForm" novalidate>
+      <div class="grid">
+        <div class="field">
+          <label for="uName">اسم المستخدم *</label>
+          <input id="uName" type="text" placeholder="مثال: أحمد" required>
+        </div>
+        <div class="field">
+          <label for="uEmail">البريد الإلكتروني *</label>
+          <input id="uEmail" type="email" placeholder="name@example.com" required dir="ltr" style="text-align:left">
+        </div>
+        <div class="field">
+          <label for="uPassword">كلمة السر *</label>
+          <input id="uPassword" type="password" placeholder="6 أحرف على الأقل" required dir="ltr" style="text-align:left">
+        </div>
+        <div class="field">
+          <label for="uRole">الدور *</label>
+          <select id="uRole">
+            <option value="employee">موظف — تسجيل طلبات بس</option>
+            <option value="admin">أدمن — تسجيل وإدارة كاملة</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-accent" type="submit">إنشاء الحساب</button>
+      </div>
+      <div class="msg" id="userMsg" role="status"></div>
+    </form>
+    <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
+      <h3 style="font-size:16px;margin-bottom:10px">تغيير كلمة السر الخاصة بي</h3>
+      <div class="grid">
+        <div class="field">
+          <label for="myNewPassword">كلمة السر الجديدة</label>
+          <input id="myNewPassword" type="password" placeholder="كلمة السر الجديدة" dir="ltr" style="text-align:left">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-outline" type="button" id="changePwBtn">تغيير كلمة السر</button>
+      </div>
+      <div class="msg" id="pwMsg" role="status"></div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Print preview -->
+<div class="overlay" id="printOverlay" role="dialog" aria-modal="true" aria-label="معاينة الطباعة">
+  <div class="sheet">
+    <div class="close-row">
+      <button class="btn btn-accent" id="downloadPrint" type="button">⬇️ تنزيل ورقة السجل للطباعة</button>
+      <button class="btn btn-outline" id="closePrint" type="button" style="color:#111;border-color:#bbb;background:#fff">إغلاق</button>
+    </div>
+    <div id="printArea"></div>
+  </div>
+</div>
+
+<!-- تسجيل خطوة لوحدها -->
+<div class="overlay" id="stepOverlay" role="dialog" aria-modal="true" aria-label="تسجيل خطوة من موقف الطلب">
+  <div class="confirm-box" style="width:min(460px,100%)">
+    <h3 id="stepTitle">تسجيل عروض الأسعار</h3>
+    <p id="stepInfo" style="margin-bottom:12px"></p>
+    <div class="field">
+      <label for="stepDate" id="stepLabel">تاريخ عروض الأسعار</label>
+      <input id="stepDate" type="date" style="width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:15.5px">
+    </div>
+    <div class="msg" id="stepMsg" role="status"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn btn-accent" id="stepSave" type="button">حفظ</button>
+      <button class="btn btn-outline" id="stepClear" type="button">مسح التاريخ</button>
+      <button class="btn btn-outline" id="stepCancel" type="button">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirm -->
+<div class="overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-label="تأكيد الحذف">
+  <div class="confirm-box">
+    <h3>حذف الطلب؟</h3>
+    <p id="confirmText"></p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-danger" id="confirmYes" type="button">حذف نهائي</button>
+      <button class="btn btn-outline" id="confirmNo" type="button">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  /* ---------- Supabase ---------- */
+  var SUPABASE_URL = "https://wkrasfnkozbqnhkosngd.supabase.co";
+  /* المفتاح العام (publishable) فقط — آمن للاستخدام في المتصفح بعد تفعيل RLS.
+     لا يوجد أي مفتاح سري في هذا الملف أبداً. */
+  var SUPABASE_KEY = "sb_publishable_Vla_hMPIlRl46MNPSrhdgA_ouae6ycI";
+  var TABLE = "purchase_requests";
+  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  var requests = [];
+  var editingId = null;
+  var filter = "all";
+  var pendingDelete = null;
+  var stepTargetId = null;
+  var stepField = null;
+  var currentUser = null;
+  var userRole = "employee";
+  var userName = "";
+  var realtimeChannel = null;
+  var refreshTimer = null;
+  var seeded = false;
+
+  var STEP_META = {
+    quotes: { label:"عروض الأسعار", buttonLabel:"عروض", dateLabel:"تاريخ عروض الأسعار", column:"price_quote_date", input:"fQuotes", panel:"panelQuotes", btn:"stepBtnQuotes", state:"stepBtnQuotesState" },
+    decision: { label:"البت", buttonLabel:"البت", dateLabel:"تاريخ البت", column:"decision_date", input:"fDecision", panel:"panelDecision", btn:"stepBtnDecision", state:"stepBtnDecisionState" },
+    exec: { label:"التنفيذ", buttonLabel:"التنفيذ", dateLabel:"تاريخ التنفيذ", column:"execution_date", input:"fExec", panel:"panelExec", btn:"stepBtnExec", state:"stepBtnExecState" }
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var tbody = $("tbody"), cards = $("cards");
+
+  function isAdmin(){ return userRole === "admin"; }
+  function roleLabel(){ return isAdmin() ? "أدمن" : "موظف"; }
+
+  /* ---------- تحويل بين صف قاعدة البيانات ونموذج التطبيق ---------- */
+  function toApp(row){
+    return {
+      id: row.id,
+      number: row.request_number || "",
+      date: row.request_date || "",
+      desc: row.description || "",
+      quotes: row.price_quote_date || "",
+      decision: row.decision_date || "",
+      exec: row.execution_date || "",
+      notes: row.notes || ""
+    };
+  }
+  function toDb(d){
+    return {
+      request_number: d.number,
+      request_date: d.date || null,
+      description: d.desc,
+      price_quote_date: d.quotes || null,
+      decision_date: d.decision || null,
+      execution_date: d.exec || null,
+      notes: d.notes || null
+    };
+  }
+  function setSync(text, ok){
+    var el = $("syncStatus");
+    el.textContent = text;
+    el.className = "sync-status " + (ok === true ? "ok" : ok === false ? "err" : "");
+  }
+
+  /* ---------- المصادقة ---------- */
+  function showAuthMsg(text, ok){
+    var m = $("authMsg");
+    m.textContent = text;
+    m.className = "msg " + (ok ? "ok" : "err");
+  }
+  function applyRole(user){
+    var md = user.app_metadata || {};
+    var um = user.user_metadata || {};
+    userRole = md.role || um.role || "employee";
+    userName = um.name || user.email || "";
+    currentUser = user;
+    $("userName").textContent = userName;
+    var badge = $("userRoleBadge");
+    badge.textContent = roleLabel();
+    badge.classList.toggle("employee", !isAdmin());
+    /* الموظف: إخفاء زر إدارة الحسابات والاستيراد وصندوق المراحل في النموذج */
+    $("accountsBtn").style.display = isAdmin() ? "" : "none";
+    $("accountsCard").hidden = true;
+    $("importWrap").style.display = isAdmin() ? "" : "none";
+    $("formStepsBox").style.display = isAdmin() ? "" : "none";
+  }
+  function showApp(){
+    $("authScreen").hidden = true;
+    $("appWrap").hidden = false;
+  }
+  function showLogin(){
+    $("appWrap").hidden = true;
+    $("authScreen").hidden = false;
+    $("authPassword").value = "";
+  }
+  async function handleAuthSubmit(e){
+    e.preventDefault();
+    var email = $("authEmail").value.trim();
+    var password = $("authPassword").value;
+    if(!email || !password){ showAuthMsg("من فضلك املا البريد الإلكتروني وكلمة السر.", false); return; }
+    $("authSubmitBtn").disabled = true;
+    try{
+      var res = await db.auth.signInWithPassword({ email: email, password: password });
+      if(res.error) throw res.error;
+      if(!res.data.session) throw new Error("تعذّر تسجيل الدخول. تأكد من البيانات وحاول مرة أخرى.");
+      await enterApp(res.data.session.user);
+    }catch(err){
+      showAuthMsg("تعذّر تسجيل الدخول: " + (err.message || "خطأ غير معروف"), false);
+    }finally{
+      $("authSubmitBtn").disabled = false;
+    }
+  }
+  async function enterApp(user){
+    applyRole(user);
+    showApp();
+    setSync("جاري تحميل السجل من قاعدة البيانات المشتركة…", null);
+    await loadRequests();
+    startRealtime();
+    if(refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(function(){ loadRequests(true); }, 30000);
+  }
+  async function logout(){
+    await db.auth.signOut();
+    stopRealtime();
+    if(refreshTimer){ clearInterval(refreshTimer); refreshTimer = null; }
+    requests = [];
+    currentUser = null;
+    showLogin();
+  }
+
+  /* ---------- قراءة وكتابة قاعدة البيانات ---------- */
+  async function loadRequests(quiet){
+    try{
+      var res = await db.from(TABLE).select("*").order("id", { ascending: false });
+      if(res.error) throw res.error;
+      requests = (res.data || []).map(toApp);
+      setSync("متصل بقاعدة البيانات المشتركة • آخر تحديث " + new Date().toLocaleTimeString("ar-EG"), true);
+      /* شبكة أمان: لو الجدول فاضي والأدمن داخل، سجّل الطلب المعروف 2631142 مرة واحدة */
+      if(!seeded && requests.length === 0 && isAdmin()){
+        seeded = true;
+        var seed = await db.from(TABLE).insert([{
+          request_number: "2631142", request_date: "2026-11-05",
+          description: "بور سبلاي استعمال خارج", price_quote_date: "2026-11-23",
+          decision_date: null, execution_date: null, notes: null
+        }]).select("*");
+        if(!seed.error && seed.data && seed.data.length){
+          requests = seed.data.map(toApp);
+        }
+      }
+      render();
+    }catch(err){
+      if(!quiet) setSync("تعذّر الاتصال بقاعدة البيانات المشتركة", false);
+      console.error(err);
+    }
+  }
+  function startRealtime(){
+    try{
+      stopRealtime();
+      realtimeChannel = db.channel("purchase-requests-changes")
+        .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, function(){ loadRequests(true); })
+        .subscribe();
+    }catch(err){ console.error(err); }
+  }
+  function stopRealtime(){
+    if(realtimeChannel){ try{ db.removeChannel(realtimeChannel); }catch(_){} realtimeChannel = null; }
+  }
+  async function dbInsert(data){
+    var res = await db.from(TABLE).insert([toDb(data)]).select("*").single();
+    if(res.error) throw res.error;
+    return toApp(res.data);
+  }
+  async function dbUpdate(id, data){
+    var res = await db.from(TABLE).update(toDb(data)).eq("id", id).select("*").single();
+    if(res.error) throw res.error;
+    return toApp(res.data);
+  }
+  async function dbUpdateStep(id, field, value){
+    var patch = {};
+    patch[STEP_META[field].column] = value || null;
+    var res = await db.from(TABLE).update(patch).eq("id", id).select("*").single();
+    if(res.error) throw res.error;
+    return toApp(res.data);
+  }
+  async function dbDelete(id){
+    var res = await db.from(TABLE).delete().eq("id", id);
+    if(res.error) throw res.error;
+  }
+
+  /* ---------- العرض ---------- */
+  function statusOf(r){
+    if(r.exec) return {key:"done", label:"منفذ"};
+    if(r.decision) return {key:"decision", label:"تم البت"};
+    if(r.quotes) return {key:"quotes", label:"عروض الأسعار"};
+    return {key:"new", label:"مسجل"};
+  }
+  function fmt(d){
+    if(!d) return "—";
+    var p = String(d).split("-");
+    if(p.length!==3) return d;
+    return p[2]+"/"+p[1]+"/"+p[0];
+  }
+  function esc(s){
+    return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function visible(){
+    var q = $("q").value.trim().toLowerCase();
+    return requests.filter(function(r){
+      var st = statusOf(r).key;
+      if(filter!=="all" && st!==filter) return false;
+      if(q && (r.number+" "+r.desc+" "+(r.notes||"")).toLowerCase().indexOf(q)===-1) return false;
+      return true;
+    });
+  }
+  function badge(st){
+    var cls = st.key==="done"?"b-done":st.key==="decision"?"b-decision":st.key==="quotes"?"b-quotes":"b-new";
+    return '<span class="badge '+cls+'">'+esc(st.label)+'</span>';
+  }
+  /* زر المرحلة في الإجراءات: «عروض» بس (الاسم الكامل يفضل في نافذة المرحلة والأعمدة والطباعة) */
+  function stepMini(r, field){
+    var meta = STEP_META[field];
+    var val = r[field] || "";
+    var has = !!val;
+    return '<button type="button" class="step-mini '+field+(has?" has":"")+'" data-step-open="'+field+'" data-step-id="'+r.id+'" title="تسجيل '+esc(meta.label)+' لوحده لطلب رقم '+esc(r.number)+'">'+esc(meta.buttonLabel)+'<span>'+(has?("✓ "+fmt(val)):"+ تسجيل")+"</span></button>";
+  }
+  function actionsHtml(r){
+    if(!isAdmin()) return "";
+    return '<div class="row-actions">'+
+      '<button type="button" class="btn btn-outline btn-sm" data-edit="'+r.id+'">تعديل</button>'+
+      '<button type="button" class="btn btn-danger btn-sm" data-del="'+r.id+'">حذف</button>'+
+    "</div>"+
+    '<div class="step-actions">'+
+      stepMini(r,"quotes")+stepMini(r,"decision")+stepMini(r,"exec")+
+    "</div>";
+  }
+  function render(){
+    var list = visible();
+    $("stTotal").textContent = requests.length;
+    var done=0, dec=0;
+    requests.forEach(function(r){ var k=statusOf(r).key; if(k==="done")done++; if(k==="decision")dec++; });
+    $("stDone").textContent = done;
+    $("stDecision").textContent = dec;
+    $("stProgress").textContent = requests.length - done;
+
+    if(!list.length){
+      tbody.innerHTML = "";
+      cards.innerHTML = "";
+      var eb = $("emptyBox");
+      eb.innerHTML = requests.length===0 ? "<b>لا توجد طلبات مسجلة بعد</b>" : "<b>لا توجد طلبات مطابقة</b>";
+      eb.style.display = "block";
+      return;
+    }
+    $("emptyBox").style.display = "none";
+
+    tbody.innerHTML = list.map(function(r,i){
+      var st = statusOf(r);
+      return "<tr>"+
+        '<td class="num">'+(i+1)+"</td>"+
+        '<td class="num"><b>'+esc(r.number)+"</b></td>"+
+        '<td class="date">'+fmt(r.date)+"</td>"+
+        '<td class="desc">'+esc(r.desc)+"</td>"+
+        '<td class="date">'+fmt(r.quotes)+"</td>"+
+        '<td class="date">'+fmt(r.decision)+"</td>"+
+        '<td class="date">'+fmt(r.exec)+"</td>"+
+        "<td>"+badge(st)+"</td>"+
+        '<td class="desc">'+esc(r.notes||"—")+"</td>"+
+        "<td>"+actionsHtml(r)+"</td></tr>";
+    }).join("");
+
+    cards.innerHTML = list.map(function(r,i){
+      var st = statusOf(r);
+      return '<article class="req-card">'+
+        '<div class="top"><div><span class="no">'+(i+1)+". طلب رقم "+esc(r.number)+'</span><div style="color:var(--muted);font-size:13px">تاريخ الطلب: '+fmt(r.date)+'</div></div>'+badge(st)+"</div>"+
+        '<p class="desc">'+esc(r.desc)+"</p>"+
+        '<div class="kv">'+
+          "<div><span>تاريخ عروض الأسعار</span><b>"+fmt(r.quotes)+"</b></div>"+
+          "<div><span>تاريخ البت</span><b>"+fmt(r.decision)+"</b></div>"+
+          "<div><span>تاريخ التنفيذ</span><b>"+fmt(r.exec)+"</b></div>"+
+          "<div><span>الحالة</span><b>"+esc(st.label)+"</b></div>"+
+        "</div>"+
+        (r.notes?'<p class="notes">ملاحظات: '+esc(r.notes)+"</p>":"")+
+        (isAdmin() ? '<div class="card-steps">'+stepMini(r,"quotes")+stepMini(r,"decision")+stepMini(r,"exec")+"</div>" : "")+
+        (isAdmin() ? '<div class="row-actions" style="margin-top:10px">'+
+          '<button type="button" class="btn btn-outline btn-sm" data-edit="'+r.id+'">تعديل كامل</button>'+
+          '<button type="button" class="btn btn-danger btn-sm" data-del="'+r.id+'">حذف</button>'+
+        "</div>" : "")+"</article>";
+    }).join("");
+  }
+
+  function showMsg(text, ok){
+    var m = $("formMsg");
+    m.textContent = text;
+    m.className = "msg " + (ok ? "ok" : "err");
+    setTimeout(function(){ m.className="msg"; m.textContent=""; }, 4000);
+  }
+  function refreshStepBtnStates(){
+    Object.keys(STEP_META).forEach(function(k){
+      var m = STEP_META[k];
+      var v = $(m.input).value;
+      var st = $(m.state);
+      if(st) st.textContent = v ? ("مسجلة: "+fmt(v)) : "غير مسجلة";
+    });
+  }
+  function closeStepPanels(except){
+    Object.keys(STEP_META).forEach(function(k){
+      var m = STEP_META[k];
+      var open = (k===except);
+      var p = $(m.panel), b = $(m.btn);
+      if(p) p.hidden = !open;
+      if(b){ b.classList.toggle("open", open); b.setAttribute("aria-expanded", open?"true":"false"); }
+    });
+  }
+  function toggleStepPanel(field){
+    var p = $(STEP_META[field].panel);
+    var willOpen = p && p.hidden;
+    closeStepPanels(willOpen ? field : null);
+    if(willOpen){
+      var inp = $(STEP_META[field].input);
+      setTimeout(function(){ if(inp) inp.focus({preventScroll:true}); }, 60);
+    }
+  }
+  function resetForm(){
+    $("reqForm").reset();
+    editingId = null;
+    $("formTitle").textContent = "تسجيل طلب شراء";
+    $("saveBtn").textContent = "حفظ الطلب";
+    $("cancelEdit").style.display = "none";
+    closeStepPanels(null);
+    refreshStepBtnStates();
+  }
+  function openForm(){
+    var ov = $("formOverlay");
+    ov.classList.add("open");
+    $("toggleFormBtn").setAttribute("aria-expanded","true");
+    document.body.style.overflow = "hidden";
+  }
+  function closeForm(){
+    var ov = $("formOverlay");
+    ov.classList.remove("open");
+    $("toggleFormBtn").setAttribute("aria-expanded","false");
+    document.body.style.overflow = "";
+  }
+  function isFormOpen(){ return $("formOverlay").classList.contains("open"); }
+  function toggleForm(){
+    if(isFormOpen()){
+      resetForm();
+      closeForm();
+    } else {
+      openForm();
+      setTimeout(function(){ $("fNumber").focus({preventScroll:true}); }, 80);
+    }
+  }
+  $("toggleFormBtn").addEventListener("click", toggleForm);
+  $("closeFormBtn").addEventListener("click", function(){ resetForm(); closeForm(); });
+  $("closeFormTopBtn").addEventListener("click", function(){ resetForm(); closeForm(); });
+  $("formOverlay").addEventListener("click", function(e){ if(e.target===$("formOverlay")){ resetForm(); closeForm(); } });
+
+  document.querySelectorAll("[data-step-toggle]").forEach(function(b){
+    b.addEventListener("click", function(){ toggleStepPanel(b.getAttribute("data-step-toggle")); });
+  });
+  document.querySelectorAll("[data-close-step]").forEach(function(b){
+    b.addEventListener("click", function(){ closeStepPanels(null); });
+  });
+  document.querySelectorAll("[data-clear-step]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var f = b.getAttribute("data-clear-step");
+      $(STEP_META[f].input).value = "";
+      refreshStepBtnStates();
+    });
+  });
+  ["fQuotes","fDecision","fExec"].forEach(function(id){
+    $(id).addEventListener("change", refreshStepBtnStates);
+    $(id).addEventListener("input", refreshStepBtnStates);
+  });
+  refreshStepBtnStates();
+
+  /* تسجيل / تعديل طلب — الحفظ في Supabase */
+  $("reqForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+    var number = $("fNumber").value.trim();
+    var date = $("fDate").value;
+    var desc = $("fDesc").value.trim();
+    if(!number || !date || !desc){ showMsg("من فضلك املا رقم الطلب وتاريخ الطلب ووصف الطلب.", false); return; }
+    var dup = requests.some(function(r){ return r.number===number && String(r.id)!==String(editingId); });
+    if(dup){ showMsg("رقم الطلب ده مسجل قبل كده. عدّل الطلب الموجود أو استخدم رقمًا آخر.", false); return; }
+    var data = {
+      number:number, date:date, desc:desc,
+      quotes: isAdmin() ? $("fQuotes").value : "",
+      decision: isAdmin() ? $("fDecision").value : "",
+      exec: isAdmin() ? $("fExec").value : "",
+      notes:$("fNotes").value.trim()
+    };
+    $("saveBtn").disabled = true;
+    try{
+      if(editingId){
+        if(!isAdmin()){ showMsg("التعديل متاح لحساب الأدمن فقط.", false); return; }
+        var old = requests.find(function(r){ return String(r.id)===String(editingId); }) || {};
+        /* الموظف لا يعدّل؛ والأدمن يحافظ على تواريخ المراحل لو النموذج أخفاها */
+        data.quotes = $("fQuotes").value || old.quotes || "";
+        data.decision = $("fDecision").value || old.decision || "";
+        data.exec = $("fExec").value || old.exec || "";
+        await dbUpdate(editingId, data);
+        showMsg("تم حفظ التعديل في قاعدة البيانات المشتركة.", true);
+      } else {
+        await dbInsert(data);
+        showMsg("تم تسجيل الطلب في قاعدة البيانات المشتركة.", true);
+      }
+      await loadRequests(true);
+      resetForm();
+      closeForm();
+    }catch(err){
+      showMsg("تعذّر الحفظ: " + (err.message || "خطأ في الاتصال بقاعدة البيانات"), false);
+    }finally{
+      $("saveBtn").disabled = false;
+    }
+  });
+  $("cancelEdit").addEventListener("click", function(){ resetForm(); closeForm(); });
+  $("resetBtn").addEventListener("click", function(){ if(editingId) resetForm(); });
+
+  /* ---------- نافذة تسجيل خطوة لوحدها (أدمن فقط) ---------- */
+  function showStepMsg(text, ok){
+    var m = $("stepMsg");
+    m.textContent = text;
+    m.className = "msg " + (ok ? "ok" : "err");
+  }
+  function openStepModal(id, field){
+    if(!isAdmin()) return;
+    var r = requests.find(function(x){ return String(x.id)===String(id); });
+    if(!r || !STEP_META[field]) return;
+    stepTargetId = id; stepField = field;
+    var meta = STEP_META[field];
+    $("stepTitle").textContent = "تسجيل " + meta.label + " — طلب رقم " + r.number;
+    $("stepInfo").textContent = r.desc ? (r.desc.length>140 ? r.desc.slice(0,140)+"…" : r.desc) : "";
+    $("stepLabel").textContent = meta.dateLabel;
+    $("stepDate").value = r[field] || "";
+    var m = $("stepMsg"); m.className="msg"; m.textContent="";
+    $("stepOverlay").classList.add("open");
+    setTimeout(function(){ $("stepDate").focus({preventScroll:true}); }, 80);
+  }
+  function closeStepModal(){
+    stepTargetId = null; stepField = null;
+    $("stepOverlay").classList.remove("open");
+  }
+  $("stepCancel").addEventListener("click", closeStepModal);
+  $("stepOverlay").addEventListener("click", function(e){ if(e.target===$("stepOverlay")) closeStepModal(); });
+  $("stepClear").addEventListener("click", async function(){
+    if(!stepTargetId || !stepField || !isAdmin()) return;
+    var tid = stepTargetId, tf = stepField;
+    try{
+      await dbUpdateStep(tid, tf, "");
+      if(editingId && String(editingId)===String(tid)){ $(STEP_META[tf].input).value=""; refreshStepBtnStates(); }
+      closeStepModal();
+      await loadRequests(true);
+    }catch(err){ showStepMsg("تعذّر المسح: " + (err.message || "خطأ في الاتصال"), false); }
+  });
+  $("stepSave").addEventListener("click", async function(){
+    if(!stepTargetId || !stepField || !isAdmin()) return;
+    var v = $("stepDate").value;
+    if(!v){ showStepMsg("اختر التاريخ الأول، أو اضغط «مسح التاريخ» لو عاوز تلغي تسجيل الخطوة دي.", false); return; }
+    var label = STEP_META[stepField].label;
+    var tid = stepTargetId, tf = stepField;
+    var num = "";
+    try{
+      var updated = await dbUpdateStep(tid, tf, v);
+      num = updated.number;
+      if(editingId && String(editingId)===String(tid)){ $(STEP_META[tf].input).value=v; refreshStepBtnStates(); }
+      closeStepModal();
+      await loadRequests(true);
+      if(isFormOpen()) showMsg("تم تسجيل "+label+" للطلب رقم "+num+" بتاريخ "+fmt(v)+".", true);
+    }catch(err){ showStepMsg("تعذّر الحفظ: " + (err.message || "خطأ في الاتصال"), false); }
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key!=="Escape") return;
+    if($("stepOverlay").classList.contains("open")){ closeStepModal(); return; }
+    if(isFormOpen()){ resetForm(); closeForm(); }
+  });
+
+  document.addEventListener("click", function(e){
+    var stepBtn = e.target.closest("[data-step-open]");
+    if(stepBtn){
+      openStepModal(stepBtn.getAttribute("data-step-id"), stepBtn.getAttribute("data-step-open"));
+      return;
+    }
+    var ed = e.target.closest("[data-edit]");
+    var del = e.target.closest("[data-del]");
+    if(ed){
+      if(!isAdmin()) return;
+      var r = requests.find(function(x){ return String(x.id)===ed.getAttribute("data-edit"); });
+      if(!r) return;
+      editingId = r.id;
+      $("fNumber").value=r.number; $("fDate").value=r.date; $("fDesc").value=r.desc;
+      $("fQuotes").value=r.quotes||""; $("fDecision").value=r.decision||""; $("fExec").value=r.exec||"";
+      $("fNotes").value=r.notes||"";
+      $("formTitle").textContent = "تعديل الطلب رقم "+r.number;
+      $("saveBtn").textContent = "حفظ التعديل";
+      $("cancelEdit").style.display = "inline-flex";
+      closeStepPanels(null);
+      refreshStepBtnStates();
+      openForm();
+    }
+    if(del){
+      if(!isAdmin()) return;
+      var d = requests.find(function(x){ return String(x.id)===del.getAttribute("data-del"); });
+      if(!d) return;
+      pendingDelete = d.id;
+      $("confirmText").textContent = "هيتم حذف الطلب رقم "+d.number+" نهائيًا من السجل.";
+      $("confirmOverlay").classList.add("open");
+    }
+  });
+  $("confirmNo").addEventListener("click", function(){ pendingDelete=null; $("confirmOverlay").classList.remove("open"); });
+  $("confirmYes").addEventListener("click", async function(){
+    if(!pendingDelete || !isAdmin()) return;
+    var id = pendingDelete;
+    pendingDelete = null;
+    $("confirmOverlay").classList.remove("open");
+    try{
+      await dbDelete(id);
+      if(editingId && String(editingId)===String(id)){ resetForm(); closeForm(); }
+      await loadRequests(true);
+    }catch(err){
+      showMsg("تعذّر الحذف: " + (err.message || "خطأ في الاتصال"), false);
+    }
+  });
+
+  $("q").addEventListener("input", render);
+  $("chips").addEventListener("click", function(e){
+    var chip = e.target.closest(".chip"); if(!chip) return;
+    filter = chip.getAttribute("data-f");
+    Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(c){ c.classList.toggle("active", c===chip); });
+    render();
+  });
+  $("heroRefresh").addEventListener("click", function(){ loadRequests(); });
+  $("accountsBtn").addEventListener("click", function(){
+    var c = $("accountsCard");
+    c.hidden = !c.hidden;
+    if(!c.hidden) c.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  $("logoutBtn").addEventListener("click", logout);
+
+  /* ---------- الطباعة ---------- */
+  function buildPrintHTML(){
+    var list = visible();
+    var today = new Date();
+    var todayStr = String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+today.getFullYear();
+    var head = "<thead><tr>"+
+      "<th rowspan='2'>م</th><th rowspan='2'>رقم الطلب</th><th rowspan='2'>تاريخ الطلب</th><th rowspan='2'>وصف وبيانات الطلب</th>"+
+      "<th colspan='3'>موقف الطلب</th><th rowspan='2'>ملاحظات</th></tr>"+
+      "<tr><th>تاريخ عروض الأسعار</th><th>تاريخ البت</th><th>تاريخ التنفيذ</th></tr></thead>";
+    var rows = list.map(function(r,i){
+      return "<tr><td style='text-align:center'>"+(i+1)+"</td><td style='text-align:center'><b>"+esc(r.number)+"</b></td>"+
+        "<td style='text-align:center'>"+fmt(r.date)+"</td><td>"+esc(r.desc)+"</td>"+
+        "<td style='text-align:center'>"+fmt(r.quotes)+"</td><td style='text-align:center'>"+fmt(r.decision)+"</td>"+
+        "<td style='text-align:center'>"+fmt(r.exec)+"</td><td>"+esc(r.notes||"")+"</td></tr>";
+    }).join("");
+    var table = list.length
+      ? "<table>"+head+"<tbody>"+rows+"</tbody></table>"
+      : "<p style='text-align:center'>لا توجد طلبات</p>";
+    return "<h2>متابعة طلبات الشراء</h2>"+
+      "<div class='meta'>تاريخ الطباعة: "+todayStr+" &nbsp;•&nbsp; عدد الطلبات: "+list.length+"</div>"+
+      table;
+  }
+  function openPrint(){
+    $("printArea").innerHTML = buildPrintHTML();
+    $("printOverlay").classList.add("open");
+  }
+  function standalonePrintFile(){
+    var inner = buildPrintHTML();
+    return "<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'><title>متابعة طلبات الشراء — طباعة</title>"+
+      "<style>@page{size:A4 landscape;margin:12mm}body{font-family:Arial,Tahoma,sans-serif;color:#111}h2{text-align:center;margin:0 0 4px}.meta{text-align:center;color:#444;font-size:13px;margin-bottom:12px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #777;padding:7px 8px;font-size:13px;vertical-align:top}thead{display:table-header-group}thead th{background:#e8e8e8;text-align:center}</style></head><body>"+
+      inner + "</body></html>";
+  }
+  function downloadPrint(){
+    var blob = new Blob([standalonePrintFile()], {type:"text/html;charset=utf-8"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "سجل-طلبات-الشراء-للطباعة.html";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  }
+  $("openPrint").addEventListener("click", openPrint);
+  $("heroPrint").addEventListener("click", openPrint);
+  $("closePrint").addEventListener("click", function(){ $("printOverlay").classList.remove("open"); });
+  $("downloadPrint").addEventListener("click", downloadPrint);
+
+  /* ---------- تصدير / استيراد Excel (CSV) ---------- */
+  function exportCSV(){
+    var list = visible();
+    var head = ["م","رقم الطلب","تاريخ الطلب","وصف وبيانات الطلب","تاريخ عروض الأسعار","تاريخ البت","تاريخ التنفيذ","الحالة","ملاحظات"];
+    function cell(v){ return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'; }
+    var lines = [head.map(cell).join(",")];
+    list.forEach(function(r,i){
+      lines.push([i+1, r.number, fmt(r.date), r.desc, fmt(r.quotes), fmt(r.decision), fmt(r.exec), statusOf(r).label, r.notes||""].map(cell).join(","));
+    });
+    var blob = new Blob(["\ufeff"+lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "متابعة-طلبات-الشراء.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+  }
+  $("exportBtn").addEventListener("click", exportCSV);
+  $("heroExport").addEventListener("click", exportCSV);
+
+  function parseDate(v){
+    v = String(v||"").trim();
+    var m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(m) return m[3]+"-"+m[2].padStart(2,"0")+"-"+m[1].padStart(2,"0");
+    if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    return "";
+  }
+  function splitCSVLine(line){
+    var out=[], cur="", inQ=false;
+    for(var i=0;i<line.length;i++){
+      var c=line[i];
+      if(inQ){
+        if(c==='"' && line[i+1]==='"'){ cur+='"'; i++; }
+        else if(c==='"'){ inQ=false; }
+        else cur+=c;
+      } else {
+        if(c==='"') inQ=true;
+        else if(c===','){ out.push(cur); cur=""; }
+        else cur+=c;
+      }
+    }
+    out.push(cur); return out;
+  }
+  $("importFile").addEventListener("change", function(){
+    var file = this.files && this.files[0];
+    if(!file) return;
+    if(!isAdmin()){ showMsg("الاستيراد متاح لحساب الأدمن فقط.", false); $("importFile").value=""; return; }
+    var reader = new FileReader();
+    reader.onload = async function(){
+      try{
+        var text = String(reader.result||"").replace(/^\ufeff/,"");
+        var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+        if(lines.length<2){ showMsg("الملف لا يحتوي على بيانات قابلة للاستيراد.", false); return; }
+        var rows = [];
+        lines.slice(1).forEach(function(line){
+          var c = splitCSVLine(line);
+          if(c.length<4 || !c[1] || !c[3]) return;
+          rows.push({
+            request_number:String(c[1]).trim(), request_date:parseDate(c[2])||null,
+            description:String(c[3]).trim(), price_quote_date:parseDate(c[4])||null,
+            decision_date:parseDate(c[5])||null, execution_date:parseDate(c[6])||null,
+            notes:String(c[8]||"").trim()||null
+          });
+        });
+        if(!rows.length){ showMsg("لم يتم العثور على طلبات صالحة في الملف.", false); return; }
+        var res = await db.from(TABLE).insert(rows).select("*");
+        if(res.error) throw res.error;
+        await loadRequests(true);
+        showMsg("تم استيراد "+rows.length+" طلب بنجاح إلى قاعدة البيانات المشتركة.", true);
+      }catch(err){ showMsg("تعذّر الاستيراد: " + (err.message || "تأكد أنه ملف CSV مُصدَّر من هذا التطبيق."), false); }
+      $("importFile").value = "";
+    };
+    reader.readAsText(file, "UTF-8");
+  });
+
+  /* ---------- إدارة الحسابات (أدمن فقط) ---------- */
+  function showUserMsg(text, ok){
+    var m = $("userMsg");
+    m.textContent = text;
+    m.className = "msg " + (ok ? "ok" : "err");
+  }
+  $("userForm").addEventListener("submit", async function(e){
+    e.preventDefault();
+    if(!isAdmin()){ showUserMsg("إدارة الحسابات متاحة لحساب الأدمن فقط.", false); return; }
+    var name = $("uName").value.trim();
+    var email = $("uEmail").value.trim();
+    var password = $("uPassword").value;
+    var role = $("uRole").value;
+    if(!name || !email || !password){ showUserMsg("من فضلك املا الاسم والبريد الإلكتروني وكلمة السر.", false); return; }
+    if(password.length < 6){ showUserMsg("كلمة السر لازم تكون 6 أحرف على الأقل.", false); return; }
+    var btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    try{
+      /* عميل مؤقت لا يحفظ الجلسة، عشان إنشاء حساب الموظف ما يبدّلش جلسة الأدمن */
+      var tmp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+      });
+      var res = await tmp.auth.signUp({
+        email: email, password: password,
+        options: { data: { name: name, role: role } }
+      });
+      if(res.error) throw res.error;
+      showUserMsg("تم إنشاء حساب " + name + " (" + (role === "admin" ? "أدمن" : "موظف") + ") بنجاح." +
+        (res.data.session ? "" : " لو طُلب تأكيد البريد، فعّل الحساب من الإيميل قبل أول دخول."), true);
+      $("userForm").reset();
+    }catch(err){
+      showUserMsg("تعذّر إنشاء الحساب: " + (err.message || "خطأ غير معروف"), false);
+    }finally{
+      btn.disabled = false;
+    }
+  });
+  $("changePwBtn").addEventListener("click", async function(){
+    var np = $("myNewPassword").value;
+    var m = $("pwMsg");
+    if(!np || np.length < 6){ m.textContent = "كلمة السر الجديدة لازم تكون 6 أحرف على الأقل."; m.className = "msg err"; return; }
+    try{
+      var res = await db.auth.updateUser({ password: np });
+      if(res.error) throw res.error;
+      m.textContent = "تم تغيير كلمة السر بنجاح."; m.className = "msg ok";
+      $("myNewPassword").value = "";
+    }catch(err){
+      m.textContent = "تعذّر تغيير كلمة السر: " + (err.message || "خطأ غير معروف"); m.className = "msg err";
+    }
+    setTimeout(function(){ m.className="msg"; m.textContent=""; }, 4000);
+  });
+
+  /* ---------- بدء التشغيل ---------- */
+  $("loginForm").addEventListener("submit", handleAuthSubmit);
+
+  if(!window.supabase){
+    showAuthMsg("تعذّرت تحميل مكتبة Supabase من الإنترنت. تأكد من الاتصال بالإنترنت وأعد تحميل الصفحة.", false);
+  } else {
+    db.auth.getSession().then(function(res){
+      if(res.data && res.data.session){
+        enterApp(res.data.session.user);
+      } else {
+        showLogin();
+      }
+    }).catch(function(){
+      showLogin();
+    });
+    db.auth.onAuthStateChange(function(event, session){
+      if(event === "SIGNED_OUT"){
+        stopRealtime();
+        if(refreshTimer){ clearInterval(refreshTimer); refreshTimer = null; }
+        requests = [];
+        showLogin();
+      }
+    });
+  }
+  render();
+})();
+</script>
+</body>
+</html>
