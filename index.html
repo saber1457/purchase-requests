@@ -9,7 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase.min.js"></script>
+<script>/* احتياطي: لو فشل تحميل المكتبة المحلية، حمّلها من CDN */
+if(!window.supabase){var _s=document.createElement("script");_s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";document.head.appendChild(_s);}</script>
 <style>
 :root{
   --bg:#eef2f0; --surface:#ffffff; --surface2:#f6f8f7; --line:#d9e2de;
@@ -40,8 +42,9 @@ a{color:var(--accent)}
 .hero{background:var(--accent2);color:#fff;border-radius:18px;padding:22px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .hero h1{font-size:clamp(26px,4.5vw,38px);font-weight:900}
 .hero-title{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
-.app-logo{width:64px;height:64px;object-fit:cover;border-radius:14px;background:#fff;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.app-logo{width:64px;height:64px;object-fit:contain;border-radius:14px;background:#fff;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .auth-hero .app-logo{width:52px;height:52px;border-radius:12px}
+@media (max-width:480px){ .app-logo{width:48px;height:48px} .hero-title h1{min-width:0} }
 .hero p{margin:6px 0 0;color:rgba(255,255,255,.86);font-size:15.5px;max-width:640px;position:relative;z-index:1}
 .hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;position:relative;z-index:1}
 .btn{border:1px solid transparent;border-radius:10px;padding:10px 16px;font-weight:800;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;text-decoration:none}
@@ -195,7 +198,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 <div class="auth-screen" id="authScreen">
   <div class="auth-card">
     <div class="auth-hero">
-      <img class="app-logo" src="logo.jpg" alt="شعار الشركة">
+      <img class="app-logo" src="logo.jpg" alt="شعار الشركة" onerror="this.style.display='none'">
       <h1>متابعة طلبات الشراء</h1>
     </div>
     <form id="loginForm" novalidate>
@@ -218,7 +221,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 
   <header class="hero">
     <div class="hero-title">
-      <img class="app-logo" src="logo.jpg" alt="شعار الشركة">
+      <img class="app-logo" src="logo.jpg" alt="شعار الشركة" onerror="this.style.display='none'">
       <h1>متابعة طلبات الشراء</h1>
     </div>
     <div class="hero-actions">
@@ -327,8 +330,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         <input id="q" type="search" placeholder="رقم الطلب أو كلمة من الوصف…">
       </div>
       <div class="admin-only" id="importWrap">
-        <label for="importFile">استيراد من ملف Excel / CSV</label>
-        <input id="importFile" type="file" accept=".csv,.xls,.xlsx" style="padding:7px 10px">
+        <label for="importFile">استيراد من ملف CSV</label>
+        <input id="importFile" type="file" accept=".csv" style="padding:7px 10px">
       </div>
     </div>
     <div class="chips" id="chips" role="group" aria-label="تصفية حسب الحالة">
@@ -468,9 +471,15 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
      لا يوجد أي مفتاح سري في هذا الملف أبداً. */
   var SUPABASE_KEY = "sb_publishable_Vla_hMPIlRl46MNPSrhdgA_ouae6ycI";
   var TABLE = "purchase_requests";
-  var db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  /* لو فشل تحميل مكتبة Supabase من CDN، لا نرمي خطأ هنا — الحارس في نهاية الملف يعرض رسالة واضحة */
+  var db = null;
+  if(window.supabase){
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
 
   var requests = [];
+  var loadFailed = false;
+  var quietFails = 0;
   var editingId = null;
   var filter = "all";
   var pendingDelete = null;
@@ -481,7 +490,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   var userName = "";
   var realtimeChannel = null;
   var refreshTimer = null;
-  var seeded = false;
 
   var STEP_META = {
     quotes: { label:"عروض الأسعار", buttonLabel:"عروض", dateLabel:"تاريخ عروض الأسعار", column:"price_quote_date", input:"fQuotes", panel:"panelQuotes", btn:"stepBtnQuotes", state:"stepBtnQuotesState" },
@@ -534,7 +542,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   function applyRole(user){
     var md = user.app_metadata || {};
     var um = user.user_metadata || {};
-    userRole = md.role || um.role || "employee";
+    userRole = md.role || "employee"; /* الدور من app_metadata فقط — user_metadata يستطيع أي مستخدم تعديلها بنفسه */
     userName = um.name || user.email || "";
     currentUser = user;
     $("userName").textContent = userName;
@@ -558,6 +566,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   }
   async function handleAuthSubmit(e){
     e.preventDefault();
+    if(!db){ showAuthMsg("تعذّر تحميل مكتبة Supabase من الإنترنت. تأكد من الاتصال بالإنترنت وأعد تحميل الصفحة.", false); return; }
     var email = $("authEmail").value.trim();
     var password = $("authPassword").value;
     if(!email || !password){ showAuthMsg("من فضلك املا البريد الإلكتروني وكلمة السر.", false); return; }
@@ -597,23 +606,17 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       var res = await db.from(TABLE).select("*").order("id", { ascending: false });
       if(res.error) throw res.error;
       requests = (res.data || []).map(toApp);
+      loadFailed = false;
+      quietFails = 0;
       setSync("متصل بقاعدة البيانات المشتركة • آخر تحديث " + new Date().toLocaleTimeString("ar-EG"), true);
-      /* شبكة أمان: لو الجدول فاضي والأدمن داخل، سجّل الطلب المعروف 2631142 مرة واحدة */
-      if(!seeded && requests.length === 0 && isAdmin()){
-        seeded = true;
-        var seed = await db.from(TABLE).insert([{
-          request_number: "2631142", request_date: "2026-11-05",
-          description: "بور سبلاي استعمال خارج", price_quote_date: "2026-11-23",
-          decision_date: null, execution_date: null, notes: null
-        }]).select("*");
-        if(!seed.error && seed.data && seed.data.length){
-          requests = seed.data.map(toApp);
-        }
-      }
       render();
     }catch(err){
-      if(!quiet) setSync("تعذّر الاتصال بقاعدة البيانات المشتركة", false);
+      loadFailed = true;
+      quietFails++;
+      /* التحديث التلقائي صامت، لكن بعد فشلين متتاليين نبّه المستخدم */
+      if(!quiet || quietFails >= 2) setSync("تعذّر الاتصال بقاعدة البيانات المشتركة", false);
       console.error(err);
+      render();
     }
   }
   function startRealtime(){
@@ -710,7 +713,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       tbody.innerHTML = "";
       cards.innerHTML = "";
       var eb = $("emptyBox");
-      eb.innerHTML = requests.length===0 ? "<b>لا توجد طلبات مسجلة بعد</b>" : "<b>لا توجد طلبات مطابقة</b>";
+      eb.innerHTML = loadFailed ? "<b>تعذّر تحميل البيانات — تحقق من الاتصال بالإنترنت ثم اضغط «تحديث»</b>" : requests.length===0 ? "<b>لا توجد طلبات مسجلة بعد</b>" : "<b>لا توجد طلبات مطابقة</b>";
       eb.style.display = "block";
       return;
     }
@@ -805,19 +808,25 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     document.body.style.overflow = "";
   }
   function isFormOpen(){ return $("formOverlay").classList.contains("open"); }
+  function formHasData(){
+    return ["fNumber","fDate","fDesc","fQuotes","fDecision","fExec","fNotes"].some(function(id){ return $(id).value.trim() !== ""; });
+  }
+  function confirmCloseForm(){
+    if(formHasData() && !confirm("يوجد بيانات غير محفوظة في النموذج. إغلاق النافذة دون حفظ؟")) return;
+    resetForm(); closeForm();
+  }
   function toggleForm(){
     if(isFormOpen()){
-      resetForm();
-      closeForm();
+      confirmCloseForm();
     } else {
       openForm();
       setTimeout(function(){ $("fNumber").focus({preventScroll:true}); }, 80);
     }
   }
   $("toggleFormBtn").addEventListener("click", toggleForm);
-  $("closeFormBtn").addEventListener("click", function(){ resetForm(); closeForm(); });
-  $("closeFormTopBtn").addEventListener("click", function(){ resetForm(); closeForm(); });
-  $("formOverlay").addEventListener("click", function(e){ if(e.target===$("formOverlay")){ resetForm(); closeForm(); } });
+  $("closeFormBtn").addEventListener("click", confirmCloseForm);
+  $("closeFormTopBtn").addEventListener("click", confirmCloseForm);
+  $("formOverlay").addEventListener("click", function(e){ if(e.target===$("formOverlay")){ confirmCloseForm(); } });
 
   document.querySelectorAll("[data-step-toggle]").forEach(function(b){
     b.addEventListener("click", function(){ toggleStepPanel(b.getAttribute("data-step-toggle")); });
@@ -870,15 +879,15 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         showMsg("تم تسجيل الطلب في قاعدة البيانات المشتركة.", true);
       }
       await loadRequests(true);
-      resetForm();
-      closeForm();
+      /* أبقِ رسالة النجاح ظاهرة ثانية قبل إغلاق النافذة */
+      setTimeout(function(){ resetForm(); closeForm(); }, 1200);
     }catch(err){
       showMsg("تعذّر الحفظ: " + (err.message || "خطأ في الاتصال بقاعدة البيانات"), false);
     }finally{
       $("saveBtn").disabled = false;
     }
   });
-  $("cancelEdit").addEventListener("click", function(){ resetForm(); closeForm(); });
+  $("cancelEdit").addEventListener("click", confirmCloseForm);
   $("resetBtn").addEventListener("click", function(){ if(editingId) resetForm(); });
 
   /* ---------- نافذة تسجيل خطوة لوحدها (أدمن فقط) ---------- */
@@ -936,7 +945,9 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   document.addEventListener("keydown", function(e){
     if(e.key!=="Escape") return;
     if($("stepOverlay").classList.contains("open")){ closeStepModal(); return; }
-    if(isFormOpen()){ resetForm(); closeForm(); }
+    if($("printOverlay").classList.contains("open")){ $("printOverlay").classList.remove("open"); return; }
+    if($("confirmOverlay").classList.contains("open")){ pendingDelete=null; $("confirmOverlay").classList.remove("open"); return; }
+    if(isFormOpen()){ confirmCloseForm(); }
   });
 
   document.addEventListener("click", function(e){
@@ -1032,7 +1043,9 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         "<td style='text-align:center'>"+fmt(r.quotes)+"</td><td style='text-align:center'>"+fmt(r.decision)+"</td>"+
         "<td style='text-align:center'>"+fmt(r.exec)+"</td><td>"+esc(r.notes||"")+"</td></tr>";
     }).join("");
-    var table = list.length
+    var table = loadFailed
+      ? "<p style='text-align:center'><b>تعذّر تحميل البيانات — تحقق من الاتصال بالإنترنت ثم اضغط «تحديث»</b></p>"
+      : list.length
       ? "<table>"+head+"<tbody>"+rows+"</tbody></table>"
       : "<p style='text-align:center'>لا توجد طلبات</p>";
     return "<h2>متابعة طلبات الشراء</h2>"+
@@ -1126,10 +1139,16 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
           });
         });
         if(!rows.length){ showMsg("لم يتم العثور على طلبات صالحة في الملف.", false); return; }
+        /* تخطّي الأرقام المسجلة قبل كده عشان الاستيراد ما يكرّرش الطلبات */
+        var existing = {};
+        requests.forEach(function(r){ existing[r.number] = true; });
+        var skipped = 0;
+        rows = rows.filter(function(row){ if(existing[row.request_number]){ skipped++; return false; } return true; });
+        if(!rows.length){ showMsg(skipped ? "كل الطلبات في الملف مسجلة قبل كده — لم يتم استيراد شيء." : "لم يتم العثور على طلبات صالحة في الملف.", false); return; }
         var res = await db.from(TABLE).insert(rows).select("*");
         if(res.error) throw res.error;
         await loadRequests(true);
-        showMsg("تم استيراد "+rows.length+" طلب بنجاح إلى قاعدة البيانات المشتركة.", true);
+        showMsg("تم استيراد "+rows.length+" طلب بنجاح إلى قاعدة البيانات المشتركة." + (skipped ? " (تم تخطي "+skipped+" طلب مكرر)." : ""), true);
       }catch(err){ showMsg("تعذّر الاستيراد: " + (err.message || "تأكد أنه ملف CSV مُصدَّر من هذا التطبيق."), false); }
       $("importFile").value = "";
     };
