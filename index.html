@@ -9,9 +9,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<script src="supabase.min.js"></script>
-<script>/* احتياطي: لو فشل تحميل المكتبة المحلية، حمّلها من CDN */
-if(!window.supabase){var _s=document.createElement("script");_s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";document.head.appendChild(_s);}</script>
+<script src="supabase.min.js?v=20261124-2"></script>
+<script>/* احتياطي: لو فشل تحميل المكتبة المحلية، حمّلها من CDN بإصدار مثبّت وبصمة سلامة */
+if(!window.supabase){var _s=document.createElement("script");_s.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.min.js";_s.integrity="sha384-7i/4BYWz4Mn+lJfg2HWfEPfZQ7tmFKF3CTSKlXBpxWjNlLjcg+T6smpHG4gLmU1u";_s.crossOrigin="anonymous";_s.onload=function(){window.dispatchEvent(new Event("supabase-ready"));};_s.onerror=function(){window.dispatchEvent(new Event("supabase-failed"));};document.head.appendChild(_s);}</script>
 <style>
 :root{
   --bg:#eef2f0; --surface:#ffffff; --surface2:#f6f8f7; --line:#d9e2de;
@@ -43,7 +43,7 @@ a{color:var(--accent)}
 .hero h1{font-size:clamp(26px,4.5vw,38px);font-weight:900}
 .hero-title{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
 .app-logo{width:64px;height:64px;object-fit:contain;border-radius:14px;background:#fff;flex:none;box-shadow:0 2px 8px rgba(0,0,0,.18)}
-.auth-credit{text-align:center;color:var(--text);font-size:15px;font-weight:800;margin-top:14px}
+.auth-credit{text-align:center;color:var(--ink);font-size:15px;font-weight:800;margin-top:14px}
 .auth-hero .app-logo{width:52px;height:52px;border-radius:12px}
 @media (max-width:480px){ .app-logo{width:48px;height:48px} .hero-title h1{min-width:0} }
 .hero p{margin:6px 0 0;color:rgba(255,255,255,.86);font-size:15.5px;max-width:640px;position:relative;z-index:1}
@@ -63,7 +63,7 @@ a{color:var(--accent)}
 .user-bar .who{font-weight:800}
 .user-bar .role-badge{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:800;background:var(--accent-soft);color:var(--accent);margin-inline-start:6px}
 .user-bar .role-badge.employee{background:var(--blue-soft);color:var(--blue)}
-.user-bar .dev-credit{color:var(--text);font-size:15px;font-weight:800;margin-inline-start:8px}
+.user-bar .dev-credit{color:var(--ink);font-size:15px;font-weight:800;margin-inline-start:8px}
 .sync-status{color:var(--muted);font-size:13px;font-weight:700}
 .sync-status.ok{color:var(--accent)}
 .sync-status.err{color:var(--red)}
@@ -86,7 +86,7 @@ a{color:var(--accent)}
 .grid .full{grid-column:1/-1}
 @media(max-width:640px){.grid{grid-template-columns:1fr}}
 .field label{display:block;font-weight:800;font-size:14px;margin-bottom:6px}
-.field input,.field textarea,.field select{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:15.5px}
+.field input,.field textarea,.field select{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:16px}
 .field textarea{min-height:74px;resize:vertical}
 .field input:focus,.field textarea:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 fieldset{border:1.5px dashed var(--line);border-radius:12px;padding:12px;margin:0}
@@ -107,7 +107,13 @@ legend{font-weight:800;font-size:14px;padding:0 6px;color:var(--accent)}
 .step-panel{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface2)}
 .step-panel[hidden]{display:none}
 .step-panel .panel-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-/* أزرار الخطوات في السجل — صغيرة */
+/* أهداف لمس أكبر على الشاشات الصغيرة (الأزرار الصغيرة معتمدة على الشاشات الكبيرة) */
+@media(max-width:760px){
+  .btn-sm{min-height:36px;font-size:12.5px;padding:6px 10px}
+  .step-mini{min-height:36px;font-size:12.5px}
+  .row-actions{gap:8px}
+  .step-actions{gap:8px}
+}
 .step-actions{display:flex;flex-direction:column;gap:4px;margin-top:8px}
 .step-mini{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:4px 8px;font-weight:800;font-size:11px;cursor:pointer;text-align:right;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:24px;line-height:1.3}
 .step-mini span{font-weight:700;color:var(--muted);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -124,12 +130,18 @@ legend{font-weight:800;font-size:14px;padding:0 6px;color:var(--accent)}
 .msg{display:none;border-radius:10px;padding:10px 14px;font-weight:700;font-size:14.5px;margin-top:12px}
 .msg.ok{display:block;background:var(--accent-soft);color:var(--accent)}
 .msg.err{display:block;background:var(--red-soft);color:var(--red)}
+/* رسالة عامة (toast) خارج النوافذ — للاستيراد والحذف والتصدير */
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);width:min(520px,calc(100% - 32px));border-radius:10px;padding:12px 16px;font-weight:700;font-size:14.5px;box-shadow:var(--shadow);z-index:70;display:none;text-align:center}
+.toast.show{display:block}
+.toast.ok{background:var(--accent-soft);color:var(--accent);border:1.5px solid var(--accent)}
+.toast.err{background:var(--red-soft);color:var(--red);border:1.5px solid var(--red)}
+.hint{color:var(--muted);font-size:13.5px;font-weight:700;margin-top:12px}
 
 /* Toolbar */
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
 .toolbar .search{flex:1 1 240px}
 .toolbar label{display:block;font-weight:800;font-size:13.5px;margin-bottom:6px}
-.toolbar input,.toolbar select{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:15px}
+.toolbar input,.toolbar select{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:16px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .chip{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;min-height:38px;font-weight:800;font-size:13.5px;cursor:pointer}
 .chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -141,7 +153,7 @@ th,td{border:1px solid var(--line);padding:10px 10px;font-size:14px;vertical-ali
 thead th{background:var(--accent-soft);color:var(--ink);font-family:"Cairo";font-size:13.5px;text-align:center;vertical-align:middle}
 tbody td.num,th.num{text-align:center;white-space:nowrap}
 td.date{white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums}
-td.desc{min-width:200px;white-space:pre-wrap}
+td.desc{min-width:200px;white-space:pre-wrap;overflow-wrap:anywhere}
 .badge{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12.5px;font-weight:800;white-space:nowrap}
 .b-new{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
 .b-quotes{background:var(--gold-soft);color:var(--gold)}
@@ -177,14 +189,25 @@ td.desc{min-width:200px;white-space:pre-wrap}
 .sheet table{min-width:0;width:100%;table-layout:fixed}
 .sheet th,.sheet td{border:1px solid #999;color:#111;word-wrap:break-word;overflow-wrap:anywhere;font-size:12.5px;padding:6px}
 .sheet thead th{background:#e8e8e8}
-.sheet .close-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.sheet .close-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;position:sticky;top:0;background:#fff;z-index:2;padding:6px 0}
+@media(max-width:760px){.sheet table{min-width:760px}}
+/* طباعة حقيقية: عند الطباعة يظهر محتوى ورقة السجل فقط */
+@media print{
+  body{background:#fff !important}
+  body>*{display:none !important}
+  #printOverlay{display:block !important;position:static !important;padding:0 !important;background:#fff !important;overflow:visible !important}
+  #printOverlay .sheet{box-shadow:none !important;border-radius:0 !important;padding:0 !important;width:100% !important;max-width:none !important}
+  #printOverlay .close-row{display:none !important}
+  #printArea{overflow:visible !important}
+  .sheet table{min-width:0 !important}
+}
 footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 .confirm-box{background:var(--surface);color:var(--ink);border-radius:14px;padding:20px;width:min(420px,100%);margin:auto 0;box-shadow:var(--shadow)}
 .confirm-box h3{font-size:18px;margin-bottom:6px}
 .confirm-box p{color:var(--muted);margin:0 0 16px;font-size:14.5px}
 
 /* شاشة الدخول */
-.auth-screen{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--bg)}
+.auth-screen{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;background:var(--bg)}
 .auth-screen[hidden]{display:none}
 .auth-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:22px;width:min(440px,100%)}
 .auth-card .auth-hero{background:var(--accent2);color:#fff;border-radius:12px;padding:18px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
@@ -200,17 +223,20 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 <div class="auth-screen" id="authScreen">
   <div class="auth-card">
     <div class="auth-hero">
-      <img class="app-logo" src="logo.jpg" alt="شعار الشركة" onerror="this.style.display='none'">
+      <img class="app-logo" src="logo.jpg?v=20261124-2" alt="شعار الشركة" onerror="this.style.display='none'">
       <h1>متابعة طلبات الشراء</h1>
     </div>
     <form id="loginForm" novalidate>
       <div class="field">
         <label for="authLogin">اسم المستخدم أو البريد الإلكتروني *</label>
-        <input id="authLogin" type="text" placeholder="مثال: saber1457" required dir="ltr" style="text-align:left">
+        <input id="authLogin" type="text" placeholder="مثال: saber1457" required dir="ltr" style="text-align:left" autocomplete="username">
       </div>
       <div class="field">
         <label for="authPassword">كلمة السر *</label>
-        <input id="authPassword" type="password" placeholder="كلمة السر" required dir="ltr" style="text-align:left">
+        <div style="display:flex;gap:8px">
+          <input id="authPassword" type="password" placeholder="كلمة السر" required dir="ltr" style="text-align:left;flex:1" autocomplete="current-password">
+          <button class="btn btn-outline" type="button" id="togglePwBtn" aria-label="إظهار كلمة السر" style="flex:none;padding:10px 12px">👁️</button>
+        </div>
       </div>
       <button class="btn btn-accent" type="submit" id="authSubmitBtn" style="width:100%">دخول</button>
       <div class="msg" id="authMsg" role="status"></div>
@@ -224,7 +250,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 
   <header class="hero">
     <div class="hero-title">
-      <img class="app-logo" src="logo.jpg" alt="شعار الشركة" onerror="this.style.display='none'">
+      <img class="app-logo" src="logo.jpg?v=20261124-2" alt="شعار الشركة" onerror="this.style.display='none'">
       <h1>متابعة طلبات الشراء</h1>
     </div>
     <div class="hero-actions">
@@ -232,7 +258,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       <button class="btn btn-ghost" id="heroPrint" type="button">🖨️ طباعة السجل</button>
       <button class="btn btn-ghost" id="heroExport" type="button">⬇️ تصدير Excel</button>
       <button class="btn btn-ghost" id="heroRefresh" type="button">↻ تحديث</button>
-      <button class="btn btn-ghost" id="accountsBtn" type="button">⚙️ إدارة الحسابات</button>
+      <button class="btn btn-ghost" id="accountsBtn" type="button" aria-expanded="false" aria-controls="accountsCard">⚙️ إدارة الحسابات</button>
       <button class="btn btn-ghost" id="copyLinkBtn" type="button">🔗 نسخ رابط التطبيق</button>
     </div>
   </header>
@@ -262,7 +288,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       <div class="grid">
         <div class="field">
           <label for="fNumber">رقم الطلب *</label>
-          <input id="fNumber" type="text" inputmode="text" placeholder="مثال: 2631142" required>
+          <input id="fNumber" type="text" inputmode="numeric" autocomplete="off" maxlength="50" placeholder="مثال: 2631142" required>
         </div>
         <div class="field">
           <label for="fDate">تاريخ الطلب *</label>
@@ -270,7 +296,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         </div>
         <div class="field full">
           <label for="fDesc">وصف وبيانات الطلب *</label>
-          <textarea id="fDesc" placeholder="اكتب وصف الطلب وبياناته…" required></textarea>
+          <textarea id="fDesc" placeholder="اكتب وصف الطلب وبياناته…" maxlength="2000" required></textarea>
         </div>
       </div>
       <div class="steps-box" id="formStepsBox">
@@ -312,12 +338,12 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       </div>
       <div class="field" style="margin-top:12px">
         <label for="fNotes">ملاحظات</label>
-        <textarea id="fNotes" placeholder="أي ملاحظات على الطلب…"></textarea>
+        <textarea id="fNotes" placeholder="أي ملاحظات على الطلب…" maxlength="2000"></textarea>
       </div>
       <div class="form-actions">
         <button class="btn btn-accent" type="submit" id="saveBtn">حفظ الطلب</button>
         <button class="btn btn-outline" type="button" id="cancelEdit" style="display:none">إلغاء التعديل</button>
-        <button class="btn btn-outline" type="reset" id="resetBtn">مسح الحقول</button>
+        <button class="btn btn-outline" type="button" id="resetBtn">مسح الحقول</button>
         <button class="btn btn-outline" type="button" id="closeFormBtn">إغلاق</button>
       </div>
       <div class="msg" id="formMsg" role="status"></div>
@@ -338,12 +364,13 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       </div>
     </div>
     <div class="chips" id="chips" role="group" aria-label="تصفية حسب الحالة">
-      <button type="button" class="chip active" data-f="all">الكل</button>
-      <button type="button" class="chip" data-f="new">مسجل</button>
-      <button type="button" class="chip" data-f="quotes">عروض الأسعار</button>
-      <button type="button" class="chip" data-f="decision">تم البت</button>
-      <button type="button" class="chip" data-f="done">تم التنفيذ</button>
+      <button type="button" class="chip active" data-f="all" aria-pressed="true">الكل</button>
+      <button type="button" class="chip" data-f="new" aria-pressed="false">مسجل</button>
+      <button type="button" class="chip" data-f="quotes" aria-pressed="false">عروض الأسعار</button>
+      <button type="button" class="chip" data-f="decision" aria-pressed="false">تم البت</button>
+      <button type="button" class="chip" data-f="done" aria-pressed="false">تم التنفيذ</button>
     </div>
+    <p class="hint" id="employeeHint" hidden>تسجيل المراحل (عروض الأسعار / البت / التنفيذ) والتعديل والحذف من حساب الأدمن.</p>
 
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
       <button class="btn btn-accent" id="openPrint" type="button">🖨️ معاينة وطباعة السجل</button>
@@ -384,15 +411,15 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       <div class="grid">
         <div class="field">
           <label for="uName">اسم المستخدم *</label>
-          <input id="uName" type="text" placeholder="مثال: أحمد" required>
+          <input id="uName" type="text" placeholder="مثال: أحمد" maxlength="100" required>
         </div>
         <div class="field">
           <label for="uUsername">اسم الدخول *</label>
-          <input id="uUsername" type="text" placeholder="مثال: ahmed — كلمة واحدة بدون مسافات" required dir="ltr" style="text-align:left">
+          <input id="uUsername" type="text" placeholder="مثال: ahmed — كلمة واحدة بدون مسافات" maxlength="50" required dir="ltr" style="text-align:left">
         </div>
         <div class="field">
           <label for="uEmail">البريد الإلكتروني *</label>
-          <input id="uEmail" type="email" placeholder="name@example.com" required dir="ltr" style="text-align:left">
+          <input id="uEmail" type="email" placeholder="name@example.com" maxlength="100" required dir="ltr" style="text-align:left">
         </div>
         <div class="field">
           <label for="uPassword">كلمة السر *</label>
@@ -415,8 +442,12 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       <h3 style="font-size:16px;margin-bottom:10px">تغيير كلمة السر الخاصة بي</h3>
       <div class="grid">
         <div class="field">
+          <label for="myCurrentPassword">كلمة السر الحالية</label>
+          <input id="myCurrentPassword" type="password" placeholder="كلمة السر الحالية" dir="ltr" style="text-align:left" autocomplete="current-password">
+        </div>
+        <div class="field">
           <label for="myNewPassword">كلمة السر الجديدة</label>
-          <input id="myNewPassword" type="password" placeholder="كلمة السر الجديدة" dir="ltr" style="text-align:left">
+          <input id="myNewPassword" type="password" placeholder="كلمة السر الجديدة" dir="ltr" style="text-align:left" autocomplete="new-password">
         </div>
       </div>
       <div class="form-actions">
@@ -428,10 +459,14 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 
 </div>
 
+<!-- رسالة عامة خارج النوافذ -->
+<div id="toast" class="toast" role="status"></div>
+
 <!-- Print preview -->
 <div class="overlay" id="printOverlay" role="dialog" aria-modal="true" aria-label="معاينة الطباعة">
   <div class="sheet">
     <div class="close-row">
+      <button class="btn btn-accent" id="doPrint" type="button">🖨️ طباعة</button>
       <button class="btn btn-accent" id="downloadPrint" type="button">⬇️ تنزيل ورقة السجل للطباعة</button>
       <button class="btn btn-outline" id="closePrint" type="button" style="color:#111;border-color:#bbb;background:#fff">إغلاق</button>
     </div>
@@ -561,6 +596,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     $("accountsCard").hidden = true;
     $("importWrap").style.display = isAdmin() ? "" : "none";
     $("formStepsBox").style.display = isAdmin() ? "" : "none";
+    $("employeeHint").hidden = isAdmin();
   }
   function showApp(){
     $("authScreen").hidden = true;
@@ -582,17 +618,18 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       /* الدخول بالاسم: نجيب الإيميل المقابل للاسم من جدول usernames، أو نستخدم الإيميل مباشرة لو اتكتب */
       var email = login;
       if(login.indexOf("@") === -1){
-        var lookup = await db.from("usernames").select("email").eq("username", login.toLowerCase()).maybeSingle();
+        var lookup = await withTimeout(db.from("usernames").select("email").eq("username", login.toLowerCase()).maybeSingle());
         if(lookup.error) throw lookup.error;
-        if(!lookup.data){ showAuthMsg("اسم المستخدم غير موجود. تأكد من الاسم وحاول مرة أخرى.", false); return; }
+        if(!lookup.data){ showAuthMsg("اسم المستخدم أو كلمة السر غير صحيحة.", false); return; }
         email = lookup.data.email;
       }
-      var res = await db.auth.signInWithPassword({ email: email, password: password });
+      var res = await withTimeout(db.auth.signInWithPassword({ email: email, password: password }));
       if(res.error) throw res.error;
       if(!res.data.session) throw new Error("تعذّر تسجيل الدخول. تأكد من البيانات وحاول مرة أخرى.");
       await enterApp(res.data.session.user);
     }catch(err){
-      showAuthMsg("تعذّر تسجيل الدخول: " + (err.message || "خطأ غير معروف"), false);
+      showAuthMsg("تعذّر تسجيل الدخول: " + friendlyErr(err), false);
+      console.error(err);
     }finally{
       $("authSubmitBtn").disabled = false;
     }
@@ -604,34 +641,54 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     await loadRequests();
     startRealtime();
     if(refreshTimer) clearInterval(refreshTimer);
-    refreshTimer = setInterval(function(){ loadRequests(true); }, 30000);
+    refreshTimer = setInterval(function(){ if(!document.hidden) loadRequests(true); }, 30000);
+    if(!enterApp._visBound){
+      enterApp._visBound = true;
+      document.addEventListener("visibilitychange", function(){
+        if(!document.hidden && currentUser) loadRequests(true);
+      });
+    }
   }
   async function logout(){
-    await db.auth.signOut();
-    stopRealtime();
-    if(refreshTimer){ clearInterval(refreshTimer); refreshTimer = null; }
-    requests = [];
-    currentUser = null;
-    showLogin();
+    try{
+      if(db) await db.auth.signOut();
+    }catch(err){ console.error(err); }
+    finally{
+      stopRealtime();
+      if(refreshTimer){ clearInterval(refreshTimer); refreshTimer = null; }
+      requests = [];
+      currentUser = null;
+      showLogin();
+    }
   }
 
   /* ---------- قراءة وكتابة قاعدة البيانات ---------- */
+  var loadSeq = 0;
+  var loadingRequests = false;
   async function loadRequests(quiet){
+    if(loadingRequests) return;
+    loadingRequests = true;
+    var mySeq = ++loadSeq;
     try{
-      var res = await db.from(TABLE).select("*").order("id", { ascending: false });
+      var res = await withTimeout(db.from(TABLE).select("*").order("id", { ascending: false }));
       if(res.error) throw res.error;
+      if(mySeq !== loadSeq) return; /* استجابة قديمة — تجاهلها لو وصل طلب أحدث */
       requests = (res.data || []).map(toApp);
       loadFailed = false;
       quietFails = 0;
       setSync("متصل بقاعدة البيانات المشتركة • آخر تحديث " + new Date().toLocaleTimeString("ar-EG"), true);
       render();
     }catch(err){
+      if(mySeq !== loadSeq) return;
       loadFailed = true;
       quietFails++;
-      /* التحديث التلقائي صامت، لكن بعد فشلين متتاليين نبّه المستخدم */
-      if(!quiet || quietFails >= 2) setSync("تعذّر الاتصال بقاعدة البيانات المشتركة", false);
+      /* عند أول فشل بعد نجاح سابق، وضّح أن المعروض قديم */
+      if(quietFails === 1 && requests.length) setSync("البيانات المعروضة قديمة — تعذّر التحديث", false);
+      else if(!quiet || quietFails >= 2) setSync("تعذّر الاتصال بقاعدة البيانات المشتركة", false);
       console.error(err);
       render();
+    }finally{
+      loadingRequests = false;
     }
   }
   function startRealtime(){
@@ -639,7 +696,11 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       stopRealtime();
       realtimeChannel = db.channel("purchase-requests-changes")
         .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, function(){ loadRequests(true); })
-        .subscribe();
+        .subscribe(function(status){
+          if(status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED"){
+            console.warn("Realtime غير متاح حاليًا (" + status + ") — الاعتماد على التحديث كل 30 ثانية.");
+          }
+        });
     }catch(err){ console.error(err); }
   }
   function stopRealtime(){
@@ -678,6 +739,9 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     if(!d) return "—";
     var p = String(d).split("-");
     if(p.length!==3) return d;
+    var y = Number(p[0]), m = Number(p[1]), day = Number(p[2]);
+    var dt = new Date(y, m-1, day);
+    if(!y || !m || !day || dt.getFullYear()!==y || dt.getMonth()!==m-1 || dt.getDate()!==day) return "—";
     return p[2]+"/"+p[1]+"/"+p[0];
   }
   function esc(s){
@@ -685,13 +749,48 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
     });
   }
+  /* رسائل خطأ عربية مفهومة بدل نص Supabase الإنجليزي الخام (التفاصيل تبقى في console) */
+  function friendlyErr(err){
+    var m = String((err && err.message) || err || "");
+    if(/Invalid login credentials/i.test(m)) return "اسم المستخدم أو كلمة السر غير صحيحة.";
+    if(/Email not confirmed/i.test(m)) return "فعّل الحساب من الإيميل أولًا قبل الدخول.";
+    if(/Failed to fetch|NetworkError|network request failed/i.test(m)) return "تعذّر الاتصال بالإنترنت — تحقق من الاتصال وحاول مرة أخرى.";
+    if(/duplicate key|already exists|User already registered/i.test(m)) return "هذا الحساب أو الرقم مسجل قبل كده.";
+    if(/JWT|expired|invalid token/i.test(m)) return "انتهت الجلسة — سجّل الدخول مرة أخرى.";
+    if(/row-level security|not authorized|permission denied/i.test(m)) return "ليست لديك صلاحية لهذا الإجراء.";
+    if(/timeout|timed out|انتهت المهلة/i.test(m)) return "انتهت المهلة — تحقق من الاتصال وحاول مرة أخرى.";
+    return "حدث خطأ غير متوقع — حاول مرة أخرى.";
+  }
+  var toastTimer = null;
+  function showToast(text, ok){
+    var t = $("toast");
+    t.textContent = text;
+    t.className = "toast show " + (ok ? "ok" : "err");
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.className = "toast"; t.textContent = ""; }, 6000);
+  }
+  /* مهلة لأي طلب شبكة حتى لا يعلق للأبد */
+  function withTimeout(promise, ms){
+    return Promise.race([promise, new Promise(function(_, reject){
+      setTimeout(function(){ reject(new Error("انتهت المهلة — تحقق من الاتصال بالإنترنت")); }, ms || 15000);
+    })]);
+  }
+  /* قفل تمرير الصفحة خلف أي نافذة مفتوحة */
+  function updateBodyLock(){
+    var anyOpen = document.querySelector(".overlay.open") !== null;
+    document.body.style.overflow = anyOpen ? "hidden" : "";
+  }
   function visible(){
     var q = $("q").value.trim().toLowerCase();
-    if(q.indexOf("@") !== -1) q = ""; /* حارس: المتصفح يملأ خانة البحث بالإيميل تلقائيًا أحيانًا فيخفي كل الطلبات */
+    /* حارس: المتصفح يملأ خانة البحث بالإيميل تلقائيًا أحيانًا فيخفي كل الطلبات — تجاهل الإيميل الكامل فقط */
+    if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q)) q = "";
     return requests.filter(function(r){
       var st = statusOf(r).key;
       if(filter!=="all" && st!==filter) return false;
-      if(q && (r.number+" "+r.desc+" "+(r.notes||"")).toLowerCase().indexOf(q)===-1) return false;
+      if(q){
+        var hay = (r.number+" "+r.desc+" "+(r.notes||"")+" "+fmt(r.date)+" "+fmt(r.quotes)+" "+fmt(r.decision)+" "+fmt(r.exec)+" "+statusOf(r).label).toLowerCase();
+        if(hay.indexOf(q)===-1) return false;
+      }
       return true;
     });
   }
@@ -704,13 +803,13 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var meta = STEP_META[field];
     var val = r[field] || "";
     var has = !!val;
-    return '<button type="button" class="step-mini '+field+(has?" has":"")+'" data-step-open="'+field+'" data-step-id="'+r.id+'" title="تسجيل '+esc(meta.label)+' لوحده لطلب رقم '+esc(r.number)+'">'+esc(meta.buttonLabel)+'<span>'+(has?("✓ "+fmt(val)):"+ تسجيل")+"</span></button>";
+    return '<button type="button" class="step-mini '+field+(has?" has":"")+'" data-step-open="'+field+'" data-step-id="'+esc(String(r.id))+'" aria-label="تسجيل '+esc(meta.label)+' لطلب رقم '+esc(r.number)+'" title="تسجيل '+esc(meta.label)+' لوحده لطلب رقم '+esc(r.number)+'">'+esc(meta.buttonLabel)+'<span>'+(has?("✓ "+fmt(val)):"+ تسجيل")+"</span></button>";
   }
   function actionsHtml(r){
     if(!isAdmin()) return "";
     return '<div class="row-actions">'+
-      '<button type="button" class="btn btn-outline btn-sm" data-edit="'+r.id+'">تعديل</button>'+
-      '<button type="button" class="btn btn-danger btn-sm" data-del="'+r.id+'">حذف</button>'+
+      '<button type="button" class="btn btn-outline btn-sm" data-edit="'+esc(String(r.id))+'">تعديل</button>'+
+      '<button type="button" class="btn btn-danger btn-sm" data-del="'+esc(String(r.id))+'">حذف</button>'+
     "</div>"+
     '<div class="step-actions">'+
       stepMini(r,"quotes")+stepMini(r,"decision")+stepMini(r,"exec")+
@@ -729,7 +828,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       tbody.innerHTML = "";
       cards.innerHTML = "";
       var eb = $("emptyBox");
-      eb.innerHTML = loadFailed ? "<b>تعذّر تحميل البيانات — تحقق من الاتصال بالإنترنت ثم اضغط «تحديث»</b>" : requests.length===0 ? "<b>لا توجد طلبات مسجلة بعد</b>" : "<b>لا توجد طلبات مطابقة — امسح البحث أو اختر «الكل»</b>";
+      /* رسالة خطأ التحميل تظهر فقط عندما لا توجد بيانات أصلًا؛ وإلا فالسبب الفلتر/البحث */
+      eb.innerHTML = (loadFailed && requests.length===0) ? "<b>تعذّر تحميل البيانات — تحقق من الاتصال بالإنترنت ثم اضغط «تحديث»</b>" : requests.length===0 ? "<b>لا توجد طلبات مسجلة بعد</b>" : "<b>لا توجد طلبات مطابقة — امسح البحث أو اختر «الكل»</b><br><button type=\"button\" class=\"btn btn-outline btn-sm\" data-clear-search style=\"margin-top:10px\">مسح البحث والفلتر</button>";
       eb.style.display = "block";
       return;
     }
@@ -740,11 +840,11 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       return "<tr>"+
         '<td class="num">'+(i+1)+"</td>"+
         '<td class="num"><b>'+esc(r.number)+"</b></td>"+
-        '<td class="date">'+fmt(r.date)+"</td>"+
+        '<td class="date">'+esc(fmt(r.date))+"</td>"+
         '<td class="desc">'+esc(r.desc)+"</td>"+
-        '<td class="date">'+fmt(r.quotes)+"</td>"+
-        '<td class="date">'+fmt(r.decision)+"</td>"+
-        '<td class="date">'+fmt(r.exec)+"</td>"+
+        '<td class="date">'+esc(fmt(r.quotes))+"</td>"+
+        '<td class="date">'+esc(fmt(r.decision))+"</td>"+
+        '<td class="date">'+esc(fmt(r.exec))+"</td>"+
         "<td>"+badge(st)+"</td>"+
         '<td class="desc">'+esc(r.notes||"—")+"</td>"+
         "<td>"+actionsHtml(r)+"</td></tr>";
@@ -753,19 +853,19 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     cards.innerHTML = list.map(function(r,i){
       var st = statusOf(r);
       return '<article class="req-card">'+
-        '<div class="top"><div><span class="no">'+(i+1)+". طلب رقم "+esc(r.number)+'</span><div style="color:var(--muted);font-size:13px">تاريخ الطلب: '+fmt(r.date)+'</div></div>'+badge(st)+"</div>"+
+        '<div class="top"><div><span class="no">'+(i+1)+". طلب رقم "+esc(r.number)+'</span><div style="color:var(--muted);font-size:13px">تاريخ الطلب: '+esc(fmt(r.date))+'</div></div>'+badge(st)+"</div>"+
         '<p class="desc">'+esc(r.desc)+"</p>"+
         '<div class="kv">'+
-          "<div><span>تاريخ عروض الأسعار</span><b>"+fmt(r.quotes)+"</b></div>"+
-          "<div><span>تاريخ البت</span><b>"+fmt(r.decision)+"</b></div>"+
-          "<div><span>تاريخ التنفيذ</span><b>"+fmt(r.exec)+"</b></div>"+
+          "<div><span>تاريخ عروض الأسعار</span><b>"+esc(fmt(r.quotes))+"</b></div>"+
+          "<div><span>تاريخ البت</span><b>"+esc(fmt(r.decision))+"</b></div>"+
+          "<div><span>تاريخ التنفيذ</span><b>"+esc(fmt(r.exec))+"</b></div>"+
           "<div><span>الحالة</span><b>"+esc(st.label)+"</b></div>"+
         "</div>"+
         (r.notes?'<p class="notes">ملاحظات: '+esc(r.notes)+"</p>":"")+
         (isAdmin() ? '<div class="card-steps">'+stepMini(r,"quotes")+stepMini(r,"decision")+stepMini(r,"exec")+"</div>" : "")+
         (isAdmin() ? '<div class="row-actions" style="margin-top:10px">'+
-          '<button type="button" class="btn btn-outline btn-sm" data-edit="'+r.id+'">تعديل كامل</button>'+
-          '<button type="button" class="btn btn-danger btn-sm" data-del="'+r.id+'">حذف</button>'+
+          '<button type="button" class="btn btn-outline btn-sm" data-edit="'+esc(String(r.id))+'">تعديل كامل</button>'+
+          '<button type="button" class="btn btn-danger btn-sm" data-del="'+esc(String(r.id))+'">حذف</button>'+
         "</div>" : "")+"</article>";
     }).join("");
   }
@@ -774,7 +874,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var m = $("formMsg");
     m.textContent = text;
     m.className = "msg " + (ok ? "ok" : "err");
-    setTimeout(function(){ m.className="msg"; m.textContent=""; }, 4000);
+    /* رسائل الخطأ تبقى حتى يبدأ المستخدم إجراءً جديدًا؛ النجاح يختفي تلقائيًا */
+    if(ok) setTimeout(function(){ m.className="msg"; m.textContent=""; }, 4000);
   }
   function refreshStepBtnStates(){
     Object.keys(STEP_META).forEach(function(k){
@@ -805,27 +906,58 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   function resetForm(){
     $("reqForm").reset();
     editingId = null;
+    formSnapshot = null;
     $("formTitle").textContent = "تسجيل طلب شراء";
     $("saveBtn").textContent = "حفظ الطلب";
     $("cancelEdit").style.display = "none";
     closeStepPanels(null);
     refreshStepBtnStates();
   }
+  /* ترتيب التواريخ المنطقي: تاريخ الطلب ≤ عروض الأسعار ≤ البت ≤ التنفيذ (مع السماح بالفراغ) */
+  function datesInOrder(d){
+    var seq = [d.date, d.quotes, d.decision, d.exec];
+    var prev = "";
+    for(var i=0;i<seq.length;i++){
+      if(!seq[i]) continue;
+      if(prev && seq[i] < prev) return false;
+      prev = seq[i];
+    }
+    return true;
+  }
+  /* حدّث القائمة المحلية فورًا من الصف المُرجع من الخادم، بدل انتظار إعادة التحميل */
+  function upsertLocal(row){
+    var idx = -1;
+    requests.forEach(function(r,i){ if(String(r.id)===String(row.id)) idx = i; });
+    if(idx >= 0) requests[idx] = row;
+    else { requests.unshift(row); requests.sort(function(a,b){ return Number(b.id) - Number(a.id); }); }
+    render();
+  }
+  function removeLocal(id){
+    requests = requests.filter(function(r){ return String(r.id)!==String(id); });
+    render();
+  }
   function openForm(){
     var ov = $("formOverlay");
     ov.classList.add("open");
     $("toggleFormBtn").setAttribute("aria-expanded","true");
-    document.body.style.overflow = "hidden";
+    snapshotForm();
+    updateBodyLock();
   }
   function closeForm(){
     var ov = $("formOverlay");
     ov.classList.remove("open");
     $("toggleFormBtn").setAttribute("aria-expanded","false");
-    document.body.style.overflow = "";
+    updateBodyLock();
   }
   function isFormOpen(){ return $("formOverlay").classList.contains("open"); }
+  var formSnapshot = null;
+  function snapshotForm(){
+    formSnapshot = ["fNumber","fDate","fDesc","fQuotes","fDecision","fExec","fNotes"].map(function(id){ return $(id).value.trim(); }).join("\u0000");
+  }
   function formHasData(){
-    return ["fNumber","fDate","fDesc","fQuotes","fDecision","fExec","fNotes"].some(function(id){ return $(id).value.trim() !== ""; });
+    var cur = ["fNumber","fDate","fDesc","fQuotes","fDecision","fExec","fNotes"].map(function(id){ return $(id).value.trim(); }).join("\u0000");
+    if(formSnapshot === null) return ["fNumber","fDate","fDesc","fQuotes","fDecision","fExec","fNotes"].some(function(id){ return $(id).value.trim() !== ""; });
+    return cur !== formSnapshot; /* اسأل فقط عند وجود تغيير فعلي عن القيم التي فُتح بها النموذج */
   }
   function confirmCloseForm(){
     if(formHasData() && !confirm("يوجد بيانات غير محفوظة في النموذج. إغلاق النافذة دون حفظ؟")) return;
@@ -879,32 +1011,46 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       exec: isAdmin() ? $("fExec").value : "",
       notes:$("fNotes").value.trim()
     };
+    if(!datesInOrder(data)){ showMsg("ترتيب التواريخ غير منطقي: لازم يكون تاريخ الطلب ثم عروض الأسعار ثم البت ثم التنفيذ.", false); return; }
     $("saveBtn").disabled = true;
     try{
       if(editingId){
         if(!isAdmin()){ showMsg("التعديل متاح لحساب الأدمن فقط.", false); return; }
-        var old = requests.find(function(r){ return String(r.id)===String(editingId); }) || {};
-        /* الموظف لا يعدّل؛ والأدمن يحافظ على تواريخ المراحل لو النموذج أخفاها */
-        data.quotes = $("fQuotes").value || old.quotes || "";
-        data.decision = $("fDecision").value || old.decision || "";
-        data.exec = $("fExec").value || old.exec || "";
-        await dbUpdate(editingId, data);
+        var saved = await dbUpdate(editingId, data);
+        upsertLocal(saved);
         showMsg("تم حفظ التعديل في قاعدة البيانات المشتركة.", true);
       } else {
-        await dbInsert(data);
+        var created = await dbInsert(data);
+        upsertLocal(created);
         showMsg("تم تسجيل الطلب في قاعدة البيانات المشتركة.", true);
       }
       await loadRequests(true);
       /* أبقِ رسالة النجاح ظاهرة ثانية قبل إغلاق النافذة */
       setTimeout(function(){ resetForm(); closeForm(); }, 1200);
     }catch(err){
-      showMsg("تعذّر الحفظ: " + (err.message || "خطأ في الاتصال بقاعدة البيانات"), false);
+      showMsg("تعذّر الحفظ: " + friendlyErr(err), false);
+      console.error(err);
     }finally{
       $("saveBtn").disabled = false;
     }
   });
   $("cancelEdit").addEventListener("click", confirmCloseForm);
-  $("resetBtn").addEventListener("click", function(){ if(editingId) resetForm(); });
+  $("resetBtn").addEventListener("click", function(){
+    if(editingId){
+      /* في وضع التعديل: أعد تعبئة قيم الطلب الأصلية بدل إلغاء التعديل */
+      var r = requests.find(function(x){ return String(x.id)===String(editingId); });
+      if(r){
+        $("fNumber").value=r.number; $("fDate").value=r.date; $("fDesc").value=r.desc;
+        $("fQuotes").value=r.quotes||""; $("fDecision").value=r.decision||""; $("fExec").value=r.exec||"";
+        $("fNotes").value=r.notes||"";
+        closeStepPanels(null);
+        refreshStepBtnStates();
+        snapshotForm();
+      }
+    } else {
+      resetForm();
+    }
+  });
 
   /* ---------- نافذة تسجيل خطوة لوحدها (أدمن فقط) ---------- */
   function showStepMsg(text, ok){
@@ -924,23 +1070,30 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     $("stepDate").value = r[field] || "";
     var m = $("stepMsg"); m.className="msg"; m.textContent="";
     $("stepOverlay").classList.add("open");
+    updateBodyLock();
     setTimeout(function(){ $("stepDate").focus({preventScroll:true}); }, 80);
   }
   function closeStepModal(){
     stepTargetId = null; stepField = null;
     $("stepOverlay").classList.remove("open");
+    updateBodyLock();
   }
   $("stepCancel").addEventListener("click", closeStepModal);
   $("stepOverlay").addEventListener("click", function(e){ if(e.target===$("stepOverlay")) closeStepModal(); });
   $("stepClear").addEventListener("click", async function(){
     if(!stepTargetId || !stepField || !isAdmin()) return;
+    if(!confirm("سيتم مسح تاريخ هذه المرحلة نهائيًا. هل أنت متأكد؟")) return;
     var tid = stepTargetId, tf = stepField;
+    $("stepClear").disabled = true;
     try{
-      await dbUpdateStep(tid, tf, "");
+      var cleared = await dbUpdateStep(tid, tf, "");
+      upsertLocal(cleared);
       if(editingId && String(editingId)===String(tid)){ $(STEP_META[tf].input).value=""; refreshStepBtnStates(); }
       closeStepModal();
+      showToast("تم مسح تاريخ المرحلة.", true);
       await loadRequests(true);
-    }catch(err){ showStepMsg("تعذّر المسح: " + (err.message || "خطأ في الاتصال"), false); }
+    }catch(err){ showStepMsg("تعذّر المسح: " + friendlyErr(err), false); console.error(err); }
+    finally{ $("stepClear").disabled = false; }
   });
   $("stepSave").addEventListener("click", async function(){
     if(!stepTargetId || !stepField || !isAdmin()) return;
@@ -949,24 +1102,41 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var label = STEP_META[stepField].label;
     var tid = stepTargetId, tf = stepField;
     var num = "";
+    /* تحقق من ترتيب التواريخ مع باقي مراحل الطلب */
+    var row = requests.find(function(x){ return String(x.id)===String(tid); }) || {};
+    var check = { date: row.date||"", quotes: row.quotes||"", decision: row.decision||"", exec: row.exec||"" };
+    check[tf] = v;
+    if(!datesInOrder(check)){ showStepMsg("التاريخ غير منطقي مع باقي تواريخ الطلب: لازم يكون تاريخ الطلب ثم عروض الأسعار ثم البت ثم التنفيذ.", false); return; }
+    $("stepSave").disabled = true;
     try{
       var updated = await dbUpdateStep(tid, tf, v);
       num = updated.number;
+      upsertLocal(updated);
       if(editingId && String(editingId)===String(tid)){ $(STEP_META[tf].input).value=v; refreshStepBtnStates(); }
       closeStepModal();
       await loadRequests(true);
       if(isFormOpen()) showMsg("تم تسجيل "+label+" للطلب رقم "+num+" بتاريخ "+fmt(v)+".", true);
-    }catch(err){ showStepMsg("تعذّر الحفظ: " + (err.message || "خطأ في الاتصال"), false); }
+      else showToast("تم تسجيل "+label+" للطلب رقم "+num+".", true);
+    }catch(err){ showStepMsg("تعذّر الحفظ: " + friendlyErr(err), false); console.error(err); }
+    finally{ $("stepSave").disabled = false; }
   });
   document.addEventListener("keydown", function(e){
     if(e.key!=="Escape") return;
     if($("stepOverlay").classList.contains("open")){ closeStepModal(); return; }
-    if($("printOverlay").classList.contains("open")){ $("printOverlay").classList.remove("open"); return; }
-    if($("confirmOverlay").classList.contains("open")){ pendingDelete=null; $("confirmOverlay").classList.remove("open"); return; }
+    if($("printOverlay").classList.contains("open")){ $("printOverlay").classList.remove("open"); updateBodyLock(); return; }
+    if($("confirmOverlay").classList.contains("open")){ pendingDelete=null; $("confirmOverlay").classList.remove("open"); updateBodyLock(); return; }
     if(isFormOpen()){ confirmCloseForm(); }
   });
 
   document.addEventListener("click", function(e){
+    var clr = e.target.closest("[data-clear-search]");
+    if(clr){
+      $("q").value = "";
+      filter = "all";
+      Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(c){ c.classList.toggle("active", c.getAttribute("data-f")==="all"); c.setAttribute("aria-pressed", c.getAttribute("data-f")==="all" ? "true" : "false"); });
+      render();
+      return;
+    }
     var stepBtn = e.target.closest("[data-step-open]");
     if(stepBtn){
       openStepModal(stepBtn.getAttribute("data-step-id"), stepBtn.getAttribute("data-step-open"));
@@ -996,20 +1166,25 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       pendingDelete = d.id;
       $("confirmText").textContent = "هيتم حذف الطلب رقم "+d.number+" نهائيًا من السجل.";
       $("confirmOverlay").classList.add("open");
+      updateBodyLock();
     }
   });
-  $("confirmNo").addEventListener("click", function(){ pendingDelete=null; $("confirmOverlay").classList.remove("open"); });
+  $("confirmNo").addEventListener("click", function(){ pendingDelete=null; $("confirmOverlay").classList.remove("open"); updateBodyLock(); });
   $("confirmYes").addEventListener("click", async function(){
     if(!pendingDelete || !isAdmin()) return;
     var id = pendingDelete;
     pendingDelete = null;
     $("confirmOverlay").classList.remove("open");
+    updateBodyLock();
     try{
       await dbDelete(id);
+      removeLocal(id);
       if(editingId && String(editingId)===String(id)){ resetForm(); closeForm(); }
+      showToast("تم حذف الطلب نهائيًا.", true);
       await loadRequests(true);
     }catch(err){
-      showMsg("تعذّر الحذف: " + (err.message || "خطأ في الاتصال"), false);
+      showToast("تعذّر الحذف: " + friendlyErr(err), false);
+      console.error(err);
     }
   });
 
@@ -1017,7 +1192,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   $("chips").addEventListener("click", function(e){
     var chip = e.target.closest(".chip"); if(!chip) return;
     filter = chip.getAttribute("data-f");
-    Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(c){ c.classList.toggle("active", c===chip); });
+    Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(c){ c.classList.toggle("active", c===chip); c.setAttribute("aria-pressed", c===chip ? "true" : "false"); });
     render();
   });
   $("heroRefresh").addEventListener("click", function(){ loadRequests(); });
@@ -1031,18 +1206,27 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     try{ await navigator.clipboard.writeText(url); done(); }
     catch(e){
       var ta = document.createElement("textarea");
-      ta.value = url; document.body.appendChild(ta); ta.select();
+      ta.value = url; ta.style.cssText = "position:fixed;top:0;left:0;opacity:0;pointer-events:none";
+      document.body.appendChild(ta); ta.select();
       try{ document.execCommand("copy"); done(); }
-      catch(e2){ window.prompt("انسخ رابط التطبيق:", url); }
+      catch(e2){ showToast("تعذّر النسخ التلقائي — انسخ الرابط من شريط العنوان.", false); }
       document.body.removeChild(ta);
     }
   });
   $("accountsBtn").addEventListener("click", function(){
     var c = $("accountsCard");
     c.hidden = !c.hidden;
+    $("accountsBtn").setAttribute("aria-expanded", c.hidden ? "false" : "true");
     if(!c.hidden) c.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   $("logoutBtn").addEventListener("click", logout);
+  $("togglePwBtn").addEventListener("click", function(){
+    var inp = $("authPassword");
+    var show = inp.type === "password";
+    inp.type = show ? "text" : "password";
+    $("togglePwBtn").textContent = show ? "🙈" : "👁️";
+    $("togglePwBtn").setAttribute("aria-label", show ? "إخفاء كلمة السر" : "إظهار كلمة السر");
+  });
 
   /* ---------- الطباعة ---------- */
   function buildPrintHTML(){
@@ -1066,12 +1250,13 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       ? "<table>"+head+"<tbody>"+rows+"</tbody></table>"
       : "<p style='text-align:center'>لا توجد طلبات</p>";
     return "<h2>متابعة طلبات الشراء</h2>"+
-      "<div class='meta'>تاريخ الطباعة: "+todayStr+" &nbsp;•&nbsp; عدد الطلبات: "+list.length+"</div>"+
+      "<div class='meta'>تاريخ الطباعة: "+todayStr+" &nbsp;•&nbsp; عدد الطلبات: "+(loadFailed ? "غير معروف — تعذّر التحميل" : list.length)+"</div>"+
       table;
   }
   function openPrint(){
     $("printArea").innerHTML = buildPrintHTML();
     $("printOverlay").classList.add("open");
+    updateBodyLock();
   }
   function standalonePrintFile(){
     var inner = buildPrintHTML();
@@ -1089,14 +1274,21 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   }
   $("openPrint").addEventListener("click", openPrint);
   $("heroPrint").addEventListener("click", openPrint);
-  $("closePrint").addEventListener("click", function(){ $("printOverlay").classList.remove("open"); });
+  $("closePrint").addEventListener("click", function(){ $("printOverlay").classList.remove("open"); updateBodyLock(); });
+  $("printOverlay").addEventListener("click", function(e){ if(e.target===$("printOverlay")){ $("printOverlay").classList.remove("open"); updateBodyLock(); } });
+  $("doPrint").addEventListener("click", function(){ window.print(); });
   $("downloadPrint").addEventListener("click", downloadPrint);
 
   /* ---------- تصدير / استيراد Excel (CSV) ---------- */
   function exportCSV(){
-    var list = visible();
+    var list = requests.slice(); /* التصدير للسجل الكامل دائمًا مثل الطباعة، وليس المُصفّى فقط */
     var head = ["م","رقم الطلب","تاريخ الطلب","وصف وبيانات الطلب","تاريخ عروض الأسعار","تاريخ البت","تاريخ التنفيذ","الحالة","ملاحظات"];
-    function cell(v){ return '"'+String(v==null?"":v).replace(/"/g,'""')+'"'; }
+    /* تعقيم حقن صيغ Excel: قيمة تبدأ بـ = + - @ | % تُسبق بفاصلة عليا */
+    function cell(v){
+      var s = String(v==null?"":v);
+      if(/^\s*[=+\-@|%]/.test(s)) s = "'" + s;
+      return '"'+s.replace(/"/g,'""')+'"';
+    }
     var lines = [head.map(cell).join(",")];
     list.forEach(function(r,i){
       lines.push([i+1, r.number, fmt(r.date), r.desc, fmt(r.quotes), fmt(r.decision), fmt(r.exec), statusOf(r).label, r.notes||""].map(cell).join(","));
@@ -1111,62 +1303,101 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   $("exportBtn").addEventListener("click", exportCSV);
   $("heroExport").addEventListener("click", exportCSV);
 
+  function validDateParts(y, m, d){
+    var dt = new Date(y, m-1, d);
+    return dt.getFullYear()===y && dt.getMonth()===m-1 && dt.getDate()===d;
+  }
   function parseDate(v){
     v = String(v||"").trim();
     var m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if(m) return m[3]+"-"+m[2].padStart(2,"0")+"-"+m[1].padStart(2,"0");
-    if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    if(m){
+      var d = Number(m[1]), mo = Number(m[2]), y = Number(m[3]);
+      if(!validDateParts(y, mo, d)) return "";
+      return y+"-"+String(mo).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    }
+    var m2 = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(m2){
+      var y2 = Number(m2[1]), mo2 = Number(m2[2]), d2 = Number(m2[3]);
+      if(!validDateParts(y2, mo2, d2)) return "";
+      return v;
+    }
     return "";
   }
-  function splitCSVLine(line){
-    var out=[], cur="", inQ=false;
-    for(var i=0;i<line.length;i++){
-      var c=line[i];
+  /* محلّل CSV كامل يحترم الأسطر الجديدة داخل الخلايا المقتبسة */
+  function parseCSV(text, delim){
+    var rows = [], row = [], cur = "", inQ = false;
+    for(var i=0;i<text.length;i++){
+      var c = text[i];
       if(inQ){
-        if(c==='"' && line[i+1]==='"'){ cur+='"'; i++; }
+        if(c==='"' && text[i+1]==='"'){ cur+='"'; i++; }
         else if(c==='"'){ inQ=false; }
         else cur+=c;
       } else {
         if(c==='"') inQ=true;
-        else if(c===','){ out.push(cur); cur=""; }
+        else if(c===delim){ row.push(cur); cur=""; }
+        else if(c==="\r"){ if(text[i+1]==="\n") i++; row.push(cur); rows.push(row); row=[]; cur=""; }
+        else if(c==="\n"){ row.push(cur); rows.push(row); row=[]; cur=""; }
         else cur+=c;
       }
     }
-    out.push(cur); return out;
+    if(cur!=="" || row.length){ row.push(cur); rows.push(row); }
+    return rows;
   }
   $("importFile").addEventListener("change", function(){
     var file = this.files && this.files[0];
     if(!file) return;
-    if(!isAdmin()){ showMsg("الاستيراد متاح لحساب الأدمن فقط.", false); $("importFile").value=""; return; }
+    if(!isAdmin()){ showToast("الاستيراد متاح لحساب الأدمن فقط.", false); $("importFile").value=""; return; }
+    if(loadFailed){ showToast("تعذّر تحميل السجل الحالي — لا يمكن الاستيراد قبل التأكد من عدم تكرار الأرقام. اضغط «تحديث» أولًا.", false); $("importFile").value=""; return; }
+    if(file.size > 1024*1024){ showToast("حجم الملف أكبر من 1MB — قسّم الملف وحاول مرة أخرى.", false); $("importFile").value=""; return; }
     var reader = new FileReader();
+    reader.onerror = function(){ showToast("تعذّر قراءة الملف.", false); $("importFile").value=""; };
     reader.onload = async function(){
       try{
         var text = String(reader.result||"").replace(/^\ufeff/,"");
-        var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
-        if(lines.length<2){ showMsg("الملف لا يحتوي على بيانات قابلة للاستيراد.", false); return; }
+        if(!text.trim()){ showToast("الملف فارغ.", false); return; }
+        /* اكتشاف الفاصل: ; شائع في Excel العربي */
+        var firstLine = text.split(/\r?\n/)[0] || "";
+        var delim = (firstLine.split(";").length > firstLine.split(",").length) ? ";" : ",";
+        var allRows = parseCSV(text, delim).filter(function(r){ return r.some(function(c){ return String(c).trim() !== ""; }); });
+        if(allRows.length < 2){ showToast("الملف لا يحتوي على بيانات قابلة للاستيراد.", false); return; }
+        var header = allRows[0].join(" ");
+        if(header.indexOf("رقم الطلب") === -1){ showToast("ترويسة الملف غير معروفة — تأكد أنه ملف CSV مُصدَّر من هذا التطبيق.", false); return; }
         var rows = [];
-        lines.slice(1).forEach(function(line){
-          var c = splitCSVLine(line);
-          if(c.length<4 || !c[1] || !c[3]) return;
+        var skipped = 0, invalid = 0;
+        var seen = {};
+        requests.forEach(function(r){ seen[r.number] = true; });
+        allRows.slice(1).forEach(function(c){
+          var num = String(c[1]||"").trim();
+          var desc = String(c[3]||"").trim();
+          if(!num || !desc){ invalid++; return; }
+          if(seen[num]){ skipped++; return; }
+          var rd = parseDate(c[2]);
+          if(c[2] && String(c[2]).trim() && !rd){ invalid++; return; }
+          var qd = c[4] ? parseDate(c[4]) : "";
+          var dd = c[5] ? parseDate(c[5]) : "";
+          var ed = c[6] ? parseDate(c[6]) : "";
+          if((c[4] && String(c[4]).trim() && !qd) || (c[5] && String(c[5]).trim() && !dd) || (c[6] && String(c[6]).trim() && !ed)){ invalid++; return; }
+          seen[num] = true;
           rows.push({
-            request_number:String(c[1]).trim(), request_date:parseDate(c[2])||null,
-            description:String(c[3]).trim(), price_quote_date:parseDate(c[4])||null,
-            decision_date:parseDate(c[5])||null, execution_date:parseDate(c[6])||null,
+            request_number:num, request_date:rd||null,
+            description:desc, price_quote_date:qd||null,
+            decision_date:dd||null, execution_date:ed||null,
             notes:String(c[8]||"").trim()||null
           });
         });
-        if(!rows.length){ showMsg("لم يتم العثور على طلبات صالحة في الملف.", false); return; }
-        /* تخطّي الأرقام المسجلة قبل كده عشان الاستيراد ما يكرّرش الطلبات */
-        var existing = {};
-        requests.forEach(function(r){ existing[r.number] = true; });
-        var skipped = 0;
-        rows = rows.filter(function(row){ if(existing[row.request_number]){ skipped++; return false; } return true; });
-        if(!rows.length){ showMsg(skipped ? "كل الطلبات في الملف مسجلة قبل كده — لم يتم استيراد شيء." : "لم يتم العثور على طلبات صالحة في الملف.", false); return; }
+        if(rows.length > 500){ showToast("الملف يحتوي على أكثر من 500 طلب — قسّمه إلى ملفات أصغر.", false); return; }
+        if(!rows.length){
+          showToast(skipped ? "كل الطلبات في الملف مسجلة قبل كده — لم يتم استيراد شيء." : "لم يتم العثور على طلبات صالحة في الملف.", false);
+          return;
+        }
         var res = await db.from(TABLE).insert(rows).select("*");
         if(res.error) throw res.error;
         await loadRequests(true);
-        showMsg("تم استيراد "+rows.length+" طلب بنجاح إلى قاعدة البيانات المشتركة." + (skipped ? " (تم تخطي "+skipped+" طلب مكرر)." : ""), true);
-      }catch(err){ showMsg("تعذّر الاستيراد: " + (err.message || "تأكد أنه ملف CSV مُصدَّر من هذا التطبيق."), false); }
+        var msg = "تم استيراد "+rows.length+" طلب بنجاح إلى قاعدة البيانات المشتركة.";
+        if(skipped) msg += " (تم تخطي "+skipped+" طلب مكرر).";
+        if(invalid) msg += " (تم تخطي "+invalid+" صف غير صالح).";
+        showToast(msg, true);
+      }catch(err){ showToast("تعذّر الاستيراد: " + friendlyErr(err), false); console.error(err); }
       $("importFile").value = "";
     };
     reader.readAsText(file, "UTF-8");
@@ -1192,6 +1423,10 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
     try{
+      /* فحص مسبق: اسم دخول مكرر يترك حساب Auth يتيمًا بلا اسم دخول ولا يُصلح بإعادة المحاولة */
+      var dupe = await db.from("usernames").select("username").eq("username", username).maybeSingle();
+      if(dupe.error) throw dupe.error;
+      if(dupe.data){ showUserMsg("اسم الدخول «" + username + "» مستخدم قبل كده — اختر اسم دخول آخر.", false); return; }
       /* عميل مؤقت لا يحفظ الجلسة، عشان إنشاء حساب الموظف ما يبدّلش جلسة الأدمن */
       var tmp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
@@ -1208,22 +1443,36 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         (res.data.session ? "" : " لو طُلب تأكيد البريد، فعّل الحساب من الإيميل قبل أول دخول."), true);
       $("userForm").reset();
     }catch(err){
-      showUserMsg("تعذّر إنشاء الحساب: " + (err.message || "خطأ غير معروف"), false);
+      showUserMsg("تعذّر إنشاء الحساب: " + friendlyErr(err), false);
+      console.error(err);
     }finally{
       btn.disabled = false;
     }
   });
   $("changePwBtn").addEventListener("click", async function(){
+    var cp = $("myCurrentPassword").value;
     var np = $("myNewPassword").value;
     var m = $("pwMsg");
+    if(!cp){ m.textContent = "اكتب كلمة السر الحالية أولًا."; m.className = "msg err"; return; }
     if(!np || np.length < 6){ m.textContent = "كلمة السر الجديدة لازم تكون 6 أحرف على الأقل."; m.className = "msg err"; return; }
+    if(np === cp){ m.textContent = "كلمة السر الجديدة نفس الحالية — اختر كلمة مختلفة."; m.className = "msg err"; return; }
+    $("changePwBtn").disabled = true;
     try{
+      /* إثبات كلمة السر الحالية بإعادة الدخول بها قبل السماح بالتغيير */
+      var email = (currentUser && currentUser.email) || "";
+      if(!email) throw new Error("تعذّر تحديد حسابك — سجّل الدخول مرة أخرى.");
+      var reauth = await db.auth.signInWithPassword({ email: email, password: cp });
+      if(reauth.error) throw new Error("كلمة السر الحالية غير صحيحة.");
       var res = await db.auth.updateUser({ password: np });
       if(res.error) throw res.error;
       m.textContent = "تم تغيير كلمة السر بنجاح."; m.className = "msg ok";
+      $("myCurrentPassword").value = "";
       $("myNewPassword").value = "";
     }catch(err){
-      m.textContent = "تعذّر تغيير كلمة السر: " + (err.message || "خطأ غير معروف"); m.className = "msg err";
+      m.textContent = "تعذّر تغيير كلمة السر: " + friendlyErr(err); m.className = "msg err";
+      console.error(err);
+    }finally{
+      $("changePwBtn").disabled = false;
     }
     setTimeout(function(){ m.className="msg"; m.textContent=""; }, 4000);
   });
@@ -1231,16 +1480,38 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   /* ---------- بدء التشغيل ---------- */
   $("loginForm").addEventListener("submit", handleAuthSubmit);
 
-  if(!window.supabase){
-    showAuthMsg("تعذّرت تحميل مكتبة Supabase من الإنترنت. تأكد من الاتصال بالإنترنت وأعد تحميل الصفحة.", false);
-  } else {
+  function initDb(){
+    if(!window.supabase) return false;
+    if(!db) db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    return true;
+  }
+  function boot(){
+    if(!initDb()){
+      /* المكتبة المحلية فشلت والبديل من CDN قد يكون ما زال يتحمل — انتظر وصوله قبل إعلان الفشل */
+      showAuthMsg("جاري تحميل مكتبة الاتصال…", true);
+      var done = false;
+      var finish = function(ok){
+        if(done) return; done = true;
+        if(ok && initDb()){ bootSession(); }
+        else showAuthMsg("تعذّرت تحميل مكتبة Supabase من الإنترنت. تأكد من الاتصال بالإنترنت وأعد تحميل الصفحة.", false);
+      };
+      window.addEventListener("supabase-ready", function(){ finish(true); }, { once: true });
+      window.addEventListener("supabase-failed", function(){ finish(false); }, { once: true });
+      setTimeout(function(){ finish(!!window.supabase); }, 8000);
+      return;
+    }
+    bootSession();
+  }
+  function bootSession(){
     db.auth.getSession().then(function(res){
       if(res.data && res.data.session){
         enterApp(res.data.session.user);
       } else {
         showLogin();
       }
-    }).catch(function(){
+    }).catch(function(err){
+      console.error(err);
+      showAuthMsg("تعذّر الوصول لقاعدة البيانات — تحقق من الاتصال بالإنترنت ثم أعد تحميل الصفحة.", false);
       showLogin();
     });
     db.auth.onAuthStateChange(function(event, session){
@@ -1252,6 +1523,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       }
     });
   }
+  boot();
   render();
 })();
 </script>
