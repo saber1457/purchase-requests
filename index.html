@@ -348,7 +348,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       <button class="btn btn-outline" id="exportBtn" type="button">⬇️ تصدير Excel (CSV)</button>
     </div>
 
-    <div class="table-scroll" id="registerTableWrap" style="margin-top:14px">
+    <div class="table-scroll" style="margin-top:14px">
       <table aria-label="جدول متابعة طلبات الشراء">
         <thead>
           <tr>
@@ -816,7 +816,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 
     /* السجل مخفي افتراضيًا ويظهر فقط عند البحث أو اختيار فلتر، عشان ما يفتحش على كل الطلبات */
     var searching = comboQuery() !== "" || filter !== "all";
-    $("registerTableWrap").style.display = searching ? "" : "none";
     if(!searching && requests.length){
       tbody.innerHTML = "";
       cards.innerHTML = "";
