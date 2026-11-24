@@ -814,6 +814,17 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     $("stDecision").textContent = dec;
     $("stProgress").textContent = requests.length - done;
 
+    /* السجل مخفي افتراضيًا ويظهر فقط عند البحث أو اختيار فلتر، عشان ما يفتحش على كل الطلبات */
+    var searching = comboQuery() !== "" || filter !== "all";
+    if(!searching && requests.length){
+      tbody.innerHTML = "";
+      cards.innerHTML = "";
+      var eb0 = $("emptyBox");
+      eb0.innerHTML = "<b>ابحث برقم الطلب أو كلمة من الوصف في خانة البحث فوق، وهيظهر لك الطلب هنا</b>";
+      eb0.style.display = "block";
+      return;
+    }
+
     if(!list.length){
       tbody.innerHTML = "";
       cards.innerHTML = "";
