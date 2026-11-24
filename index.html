@@ -327,7 +327,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     <div class="toolbar">
       <div class="search">
         <label for="q">بحث</label>
-        <input id="q" type="search" placeholder="رقم الطلب أو كلمة من الوصف…">
+        <input id="q" type="search" placeholder="رقم الطلب أو كلمة من الوصف…" autocomplete="off">
       </div>
       <div class="admin-only" id="importWrap">
         <label for="importFile">استيراد من ملف CSV</label>
@@ -672,6 +672,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   }
   function visible(){
     var q = $("q").value.trim().toLowerCase();
+    if(q.indexOf("@") !== -1) q = ""; /* حارس: المتصفح يملأ خانة البحث بالإيميل تلقائيًا أحيانًا فيخفي كل الطلبات */
     return requests.filter(function(r){
       var st = statusOf(r).key;
       if(filter!=="all" && st!==filter) return false;
@@ -713,7 +714,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       tbody.innerHTML = "";
       cards.innerHTML = "";
       var eb = $("emptyBox");
-      eb.innerHTML = loadFailed ? "<b>تعذّر تحميل البيانات — تحقق من الاتصال بالإنترنت ثم اضغط «تحديث»</b>" : requests.length===0 ? "<b>لا توجد طلبات مسجلة بعد</b>" : "<b>لا توجد طلبات مطابقة</b>";
+      eb.innerHTML = loadFailed ? "<b>تعذّر تحميل البيانات — تحقق من الاتصال بالإنترنت ثم اضغط «تحديث»</b>" : requests.length===0 ? "<b>لا توجد طلبات مسجلة بعد</b>" : "<b>لا توجد طلبات مطابقة — امسح البحث أو اختر «الكل»</b>";
       eb.style.display = "block";
       return;
     }
@@ -1030,7 +1031,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 
   /* ---------- الطباعة ---------- */
   function buildPrintHTML(){
-    var list = visible();
+    var list = requests.slice(); /* الطباعة تعرض السجل كاملًا دائمًا، بغض النظر عن البحث أو الفلتر */
     var today = new Date();
     var todayStr = String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+today.getFullYear();
     var head = "<thead><tr>"+
