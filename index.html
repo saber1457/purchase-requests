@@ -299,43 +299,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
           <textarea id="fDesc" placeholder="اكتب وصف الطلب وبياناته…" maxlength="2000" required></textarea>
         </div>
       </div>
-      <div class="steps-box" id="formStepsBox">
-        <div class="step-btns">
-          <button type="button" class="step-btn quotes" id="stepBtnQuotes" data-step-toggle="quotes" aria-expanded="false" aria-controls="panelQuotes">عروض الأسعار<small id="stepBtnQuotesState">غير مسجلة</small></button>
-          <button type="button" class="step-btn decision" id="stepBtnDecision" data-step-toggle="decision" aria-expanded="false" aria-controls="panelDecision">البت<small id="stepBtnDecisionState">غير مسجل</small></button>
-          <button type="button" class="step-btn exec" id="stepBtnExec" data-step-toggle="exec" aria-expanded="false" aria-controls="panelExec">التنفيذ<small id="stepBtnExecState">غير مسجل</small></button>
-        </div>
-        <div class="step-panel" id="panelQuotes" hidden>
-          <div class="field">
-            <label for="fQuotes">تاريخ عروض الأسعار</label>
-            <input id="fQuotes" type="date">
-          </div>
-          <div class="panel-actions">
-            <button type="button" class="btn btn-outline btn-sm" data-clear-step="quotes">مسح هذا التاريخ</button>
-            <button type="button" class="btn btn-outline btn-sm" data-close-step="quotes">إغلاق</button>
-          </div>
-        </div>
-        <div class="step-panel" id="panelDecision" hidden>
-          <div class="field">
-            <label for="fDecision">تاريخ البت</label>
-            <input id="fDecision" type="date">
-          </div>
-          <div class="panel-actions">
-            <button type="button" class="btn btn-outline btn-sm" data-clear-step="decision">مسح هذا التاريخ</button>
-            <button type="button" class="btn btn-outline btn-sm" data-close-step="decision">إغلاق</button>
-          </div>
-        </div>
-        <div class="step-panel" id="panelExec" hidden>
-          <div class="field">
-            <label for="fExec">تاريخ التنفيذ</label>
-            <input id="fExec" type="date">
-          </div>
-          <div class="panel-actions">
-            <button type="button" class="btn btn-outline btn-sm" data-clear-step="exec">مسح هذا التاريخ</button>
-            <button type="button" class="btn btn-outline btn-sm" data-close-step="exec">إغلاق</button>
-          </div>
-        </div>
-      </div>
       <div class="field" style="margin-top:12px">
         <label for="fNotes">ملاحظات</label>
         <textarea id="fNotes" placeholder="أي ملاحظات على الطلب…" maxlength="2000"></textarea>
@@ -547,9 +510,9 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   var refreshTimer = null;
 
   var STEP_META = {
-    quotes: { label:"عروض الأسعار", buttonLabel:"عروض", dateLabel:"تاريخ عروض الأسعار", column:"price_quote_date", input:"fQuotes", panel:"panelQuotes", btn:"stepBtnQuotes", state:"stepBtnQuotesState" },
-    decision: { label:"البت", buttonLabel:"البت", dateLabel:"تاريخ البت", column:"decision_date", input:"fDecision", panel:"panelDecision", btn:"stepBtnDecision", state:"stepBtnDecisionState" },
-    exec: { label:"التنفيذ", buttonLabel:"التنفيذ", dateLabel:"تاريخ التنفيذ", column:"execution_date", input:"fExec", panel:"panelExec", btn:"stepBtnExec", state:"stepBtnExecState" }
+    quotes: { label:"عروض الأسعار", buttonLabel:"عروض", dateLabel:"تاريخ عروض الأسعار", column:"price_quote_date" },
+    decision: { label:"البت", buttonLabel:"البت", dateLabel:"تاريخ البت", column:"decision_date" },
+    exec: { label:"التنفيذ", buttonLabel:"التنفيذ", dateLabel:"تاريخ التنفيذ", column:"execution_date" }
   };
 
   var $ = function(id){ return document.getElementById(id); };
@@ -604,11 +567,10 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var badge = $("userRoleBadge");
     badge.textContent = roleLabel();
     badge.classList.toggle("employee", !isAdmin());
-    /* الموظف: إخفاء زر إدارة الحسابات والاستيراد وصندوق المراحل في النموذج */
+    /* الموظف: إخفاء زر إدارة الحسابات والاستيراد */
     $("accountsBtn").style.display = isAdmin() ? "" : "none";
     $("accountsCard").hidden = true;
     $("importWrap").style.display = isAdmin() ? "" : "none";
-    $("formStepsBox").style.display = isAdmin() ? "" : "none";
     $("employeeHint").hidden = isAdmin();
   }
   function showApp(){
@@ -895,32 +857,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     /* رسائل الخطأ تبقى حتى يبدأ المستخدم إجراءً جديدًا؛ النجاح يختفي تلقائيًا */
     if(ok) setTimeout(function(){ m.className="msg"; m.textContent=""; }, 4000);
   }
-  function refreshStepBtnStates(){
-    Object.keys(STEP_META).forEach(function(k){
-      var m = STEP_META[k];
-      var v = $(m.input).value;
-      var st = $(m.state);
-      if(st) st.textContent = v ? ("مسجلة: "+fmt(v)) : "غير مسجلة";
-    });
-  }
-  function closeStepPanels(except){
-    Object.keys(STEP_META).forEach(function(k){
-      var m = STEP_META[k];
-      var open = (k===except);
-      var p = $(m.panel), b = $(m.btn);
-      if(p) p.hidden = !open;
-      if(b){ b.classList.toggle("open", open); b.setAttribute("aria-expanded", open?"true":"false"); }
-    });
-  }
-  function toggleStepPanel(field){
-    var p = $(STEP_META[field].panel);
-    var willOpen = p && p.hidden;
-    closeStepPanels(willOpen ? field : null);
-    if(willOpen){
-      var inp = $(STEP_META[field].input);
-      setTimeout(function(){ if(inp) inp.focus({preventScroll:true}); }, 60);
-    }
-  }
   function resetForm(){
     $("reqForm").reset();
     editingId = null;
@@ -928,8 +864,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     $("formTitle").textContent = "تسجيل طلب شراء";
     $("saveBtn").textContent = "حفظ الطلب";
     $("cancelEdit").style.display = "none";
-    closeStepPanels(null);
-    refreshStepBtnStates();
   }
   /* ترتيب التواريخ المنطقي: تاريخ الطلب ≤ عروض الأسعار ≤ البت ≤ التنفيذ (مع السماح بالفراغ) */
   function datesInOrder(d){
@@ -970,11 +904,11 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   function isFormOpen(){ return $("formOverlay").classList.contains("open"); }
   var formSnapshot = null;
   function snapshotForm(){
-    formSnapshot = ["fNumber","fDate","fDesc","fQuotes","fDecision","fExec","fNotes"].map(function(id){ return $(id).value.trim(); }).join("\u0000");
+    formSnapshot = ["fNumber","fDate","fDesc","fNotes"].map(function(id){ return $(id).value.trim(); }).join("\u0000");
   }
   function formHasData(){
-    var cur = ["fNumber","fDate","fDesc","fQuotes","fDecision","fExec","fNotes"].map(function(id){ return $(id).value.trim(); }).join("\u0000");
-    if(formSnapshot === null) return ["fNumber","fDate","fDesc","fQuotes","fDecision","fExec","fNotes"].some(function(id){ return $(id).value.trim() !== ""; });
+    var cur = ["fNumber","fDate","fDesc","fNotes"].map(function(id){ return $(id).value.trim(); }).join("\u0000");
+    if(formSnapshot === null) return ["fNumber","fDate","fDesc","fNotes"].some(function(id){ return $(id).value.trim() !== ""; });
     return cur !== formSnapshot; /* اسأل فقط عند وجود تغيير فعلي عن القيم التي فُتح بها النموذج */
   }
   function confirmCloseForm(){
@@ -994,25 +928,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   $("closeFormTopBtn").addEventListener("click", confirmCloseForm);
   $("formOverlay").addEventListener("click", function(e){ if(e.target===$("formOverlay")){ confirmCloseForm(); } });
 
-  document.querySelectorAll("[data-step-toggle]").forEach(function(b){
-    b.addEventListener("click", function(){ toggleStepPanel(b.getAttribute("data-step-toggle")); });
-  });
-  document.querySelectorAll("[data-close-step]").forEach(function(b){
-    b.addEventListener("click", function(){ closeStepPanels(null); });
-  });
-  document.querySelectorAll("[data-clear-step]").forEach(function(b){
-    b.addEventListener("click", function(){
-      var f = b.getAttribute("data-clear-step");
-      $(STEP_META[f].input).value = "";
-      refreshStepBtnStates();
-    });
-  });
-  ["fQuotes","fDecision","fExec"].forEach(function(id){
-    $(id).addEventListener("change", refreshStepBtnStates);
-    $(id).addEventListener("input", refreshStepBtnStates);
-  });
-  refreshStepBtnStates();
-
   /* تسجيل / تعديل طلب — الحفظ في Supabase */
   $("reqForm").addEventListener("submit", async function(e){
     e.preventDefault();
@@ -1022,11 +937,14 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     if(!number || !date || !desc){ showMsg("من فضلك املا رقم الطلب وتاريخ الطلب ووصف الطلب.", false); return; }
     var dup = requests.some(function(r){ return r.number===number && String(r.id)!==String(editingId); });
     if(dup){ showMsg("رقم الطلب ده مسجل قبل كده. عدّل الطلب الموجود أو استخدم رقمًا آخر.", false); return; }
+    /* المراحل لا تُسجَّل من هذا النموذج؛ تُسجَّل بعدين من أزرار السجل.
+       عند التعديل نحافظ على تواريخ المراحل المسجلة أصلًا، وعند طلب جديد تكون فارغة. */
+    var orig = editingId ? requests.find(function(x){ return String(x.id)===String(editingId); }) : null;
     var data = {
       number:number, date:date, desc:desc,
-      quotes: isAdmin() ? $("fQuotes").value : "",
-      decision: isAdmin() ? $("fDecision").value : "",
-      exec: isAdmin() ? $("fExec").value : "",
+      quotes: orig ? (orig.quotes||"") : "",
+      decision: orig ? (orig.decision||"") : "",
+      exec: orig ? (orig.exec||"") : "",
       notes:$("fNotes").value.trim()
     };
     if(!datesInOrder(data)){ showMsg("ترتيب التواريخ غير منطقي: لازم يكون تاريخ الطلب ثم عروض الأسعار ثم البت ثم التنفيذ.", false); return; }
@@ -1059,10 +977,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       var r = requests.find(function(x){ return String(x.id)===String(editingId); });
       if(r){
         $("fNumber").value=r.number; $("fDate").value=r.date; $("fDesc").value=r.desc;
-        $("fQuotes").value=r.quotes||""; $("fDecision").value=r.decision||""; $("fExec").value=r.exec||"";
         $("fNotes").value=r.notes||"";
-        closeStepPanels(null);
-        refreshStepBtnStates();
         snapshotForm();
       }
     } else {
@@ -1106,7 +1021,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     try{
       var cleared = await dbUpdateStep(tid, tf, "");
       upsertLocal(cleared);
-      if(editingId && String(editingId)===String(tid)){ $(STEP_META[tf].input).value=""; refreshStepBtnStates(); }
       closeStepModal();
       showToast("تم مسح تاريخ المرحلة.", true);
       await loadRequests(true);
@@ -1130,7 +1044,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       var updated = await dbUpdateStep(tid, tf, v);
       num = updated.number;
       upsertLocal(updated);
-      if(editingId && String(editingId)===String(tid)){ $(STEP_META[tf].input).value=v; refreshStepBtnStates(); }
       closeStepModal();
       await loadRequests(true);
       if(isFormOpen()) showMsg("تم تسجيل "+label+" للطلب رقم "+num+" بتاريخ "+fmt(v)+".", true);
@@ -1168,13 +1081,10 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       if(!r) return;
       editingId = r.id;
       $("fNumber").value=r.number; $("fDate").value=r.date; $("fDesc").value=r.desc;
-      $("fQuotes").value=r.quotes||""; $("fDecision").value=r.decision||""; $("fExec").value=r.exec||"";
       $("fNotes").value=r.notes||"";
       $("formTitle").textContent = "تعديل الطلب رقم "+r.number;
       $("saveBtn").textContent = "حفظ التعديل";
       $("cancelEdit").style.display = "inline-flex";
-      closeStepPanels(null);
-      refreshStepBtnStates();
       openForm();
     }
     if(del){
