@@ -518,6 +518,19 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   if(window.supabase){
     db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
+  /* استدعاء دالة manage-users على الخادم: تحويل اسم الدخول لإيميل، وإنشاء الحسابات بالـ Admin API
+     (الدور يُحفظ في app_metadata، وجدول الأسماء لا يُقرأ من المتصفح أبدًا) */
+  async function callManageUsers(action, fields, token){
+    var res = await withTimeout(fetch(SUPABASE_URL + "/functions/v1/manage-users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": "Bearer " + (token || SUPABASE_KEY) },
+      body: JSON.stringify(Object.assign({ action: action }, fields || {}))
+    }));
+    var j = {};
+    try{ j = await res.json(); }catch(e){}
+    if(!res.ok) throw new Error(j.error || ("خطأ من الخادم (" + res.status + ")"));
+    return j;
+  }
 
   var requests = [];
   var loadFailed = false;
@@ -615,13 +628,16 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     if(!login || !password){ showAuthMsg("من فضلك املا اسم المستخدم وكلمة السر.", false); return; }
     $("authSubmitBtn").disabled = true;
     try{
-      /* الدخول بالاسم: نجيب الإيميل المقابل للاسم من جدول usernames، أو نستخدم الإيميل مباشرة لو اتكتب */
+      /* الدخول بالاسم: الخادم يحوّل الاسم للإيميل، أو نستخدم الإيميل مباشرة لو اتكتب */
       var email = login;
       if(login.indexOf("@") === -1){
-        var lookup = await withTimeout(db.from("usernames").select("email").eq("username", login.toLowerCase()).maybeSingle());
-        if(lookup.error) throw lookup.error;
-        if(!lookup.data){ showAuthMsg("اسم المستخدم أو كلمة السر غير صحيحة.", false); return; }
-        email = lookup.data.email;
+        try{
+          var resolved = await callManageUsers("resolve-login", { username: login.toLowerCase() });
+          email = resolved.email;
+        }catch(e){
+          if(/fetch|network|timeout|مهلة/i.test(e.message || "")) throw e;
+          showAuthMsg("اسم المستخدم أو كلمة السر غير صحيحة.", false); return;
+        }
       }
       var res = await withTimeout(db.auth.signInWithPassword({ email: email, password: password }));
       if(res.error) throw res.error;
@@ -756,6 +772,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     if(/Email not confirmed/i.test(m)) return "فعّل الحساب من الإيميل أولًا قبل الدخول.";
     if(/Failed to fetch|NetworkError|network request failed/i.test(m)) return "تعذّر الاتصال بالإنترنت — تحقق من الاتصال وحاول مرة أخرى.";
     if(/duplicate key|already exists|User already registered/i.test(m)) return "هذا الحساب أو الرقم مسجل قبل كده.";
+    if(/username taken/i.test(m)) return "اسم الدخول مستخدم قبل كده — اختر اسم دخول آخر.";
+    if(/forbidden|unauthorized/i.test(m)) return "ليست لديك صلاحية لهذا الإجراء.";
     if(/JWT|expired|invalid token/i.test(m)) return "انتهت الجلسة — سجّل الدخول مرة أخرى.";
     if(/row-level security|not authorized|permission denied/i.test(m)) return "ليست لديك صلاحية لهذا الإجراء.";
     if(/timeout|timed out|انتهت المهلة/i.test(m)) return "انتهت المهلة — تحقق من الاتصال وحاول مرة أخرى.";
@@ -1423,24 +1441,12 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
     try{
-      /* فحص مسبق: اسم دخول مكرر يترك حساب Auth يتيمًا بلا اسم دخول ولا يُصلح بإعادة المحاولة */
-      var dupe = await db.from("usernames").select("username").eq("username", username).maybeSingle();
-      if(dupe.error) throw dupe.error;
-      if(dupe.data){ showUserMsg("اسم الدخول «" + username + "» مستخدم قبل كده — اختر اسم دخول آخر.", false); return; }
-      /* عميل مؤقت لا يحفظ الجلسة، عشان إنشاء حساب الموظف ما يبدّلش جلسة الأدمن */
-      var tmp = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-      });
-      var res = await tmp.auth.signUp({
-        email: email, password: password,
-        options: { data: { name: name, role: role } }
-      });
-      if(res.error) throw res.error;
-      /* حفظ اسم الدخول مقابل الإيميل عشان يدخل بيه بعد كده */
-      var ins = await db.from("usernames").insert({ username: username, email: email });
-      if(ins.error) throw new Error("تم إنشاء الحساب لكن تعذّر حفظ اسم الدخول: " + ins.error.message);
-      showUserMsg("تم إنشاء حساب " + name + " (" + (role === "admin" ? "أدمن" : "موظف") + ") بنجاح. اسم الدخول: " + username + "." +
-        (res.data.session ? "" : " لو طُلب تأكيد البريد، فعّل الحساب من الإيميل قبل أول دخول."), true);
+      /* إنشاء الحساب يتم على الخادم (Admin API): الدور يُحفظ في app_metadata واسم الدخول يُحفظ معه،
+         والتسجيل الذاتي من المتصفح معطّل */
+      var session = (await db.auth.getSession()).data.session;
+      if(!session){ showUserMsg("انتهت الجلسة — سجّل الدخول مرة أخرى.", false); return; }
+      var created = await callManageUsers("create-user", { name: name, username: username, email: email, password: password, role: role }, session.access_token);
+      showUserMsg("تم إنشاء حساب " + name + " (" + (role === "admin" ? "أدمن" : "موظف") + ") بنجاح. اسم الدخول: " + (created.username || username) + ".", true);
       $("userForm").reset();
     }catch(err){
       showUserMsg("تعذّر إنشاء الحساب: " + friendlyErr(err), false);
