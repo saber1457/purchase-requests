@@ -492,11 +492,13 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   /* استدعاء دالة manage-users على الخادم: تحويل اسم الدخول لإيميل، وإنشاء الحسابات بالـ Admin API
      (الدور يُحفظ في app_metadata، وجدول الأسماء لا يُقرأ من المتصفح أبدًا) */
   async function callManageUsers(action, fields, token){
+    /* مهلة طويلة (45 ثانية): دالة الخادم تكون نائمة أحيانًا وتأخذ وقتًا لتستيقظ،
+       فلا نلغي المحاولة قبل أن ترد */
     var res = await withTimeout(fetch(SUPABASE_URL + "/functions/v1/manage-users", {
       method: "POST",
       headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": "Bearer " + (token || SUPABASE_KEY) },
       body: JSON.stringify(Object.assign({ action: action }, fields || {}))
-    }));
+    }), 45000);
     var j = {};
     try{ j = await res.json(); }catch(e){}
     if(!res.ok) throw new Error(j.error || ("خطأ من الخادم (" + res.status + ")"));
@@ -609,7 +611,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
           showAuthMsg("اسم المستخدم أو كلمة السر غير صحيحة.", false); return;
         }
       }
-      var res = await withTimeout(db.auth.signInWithPassword({ email: email, password: password }));
+      var res = await withTimeout(db.auth.signInWithPassword({ email: email, password: password }), 45000);
       if(res.error) throw res.error;
       if(!res.data.session) throw new Error("تعذّر تسجيل الدخول. تأكد من البيانات وحاول مرة أخرى.");
       await enterApp(res.data.session.user);
@@ -1453,7 +1455,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       /* إثبات كلمة السر الحالية بإعادة الدخول بها قبل السماح بالتغيير */
       var email = (currentUser && currentUser.email) || "";
       if(!email) throw new Error("تعذّر تحديد حسابك — سجّل الدخول مرة أخرى.");
-      var reauth = await db.auth.signInWithPassword({ email: email, password: cp });
+      var reauth = await withTimeout(db.auth.signInWithPassword({ email: email, password: cp }), 45000);
       if(reauth.error) throw new Error("كلمة السر الحالية غير صحيحة.");
       var res = await db.auth.updateUser({ password: np });
       if(res.error) throw res.error;
