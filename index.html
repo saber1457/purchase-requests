@@ -205,8 +205,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     </div>
     <form id="loginForm" novalidate>
       <div class="field">
-        <label for="authEmail">البريد الإلكتروني *</label>
-        <input id="authEmail" type="email" placeholder="name@example.com" required dir="ltr" style="text-align:left">
+        <label for="authLogin">اسم المستخدم أو البريد الإلكتروني *</label>
+        <input id="authLogin" type="text" placeholder="مثال: saber1457" required dir="ltr" style="text-align:left">
       </div>
       <div class="field">
         <label for="authPassword">كلمة السر *</label>
@@ -385,6 +385,10 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         <div class="field">
           <label for="uName">اسم المستخدم *</label>
           <input id="uName" type="text" placeholder="مثال: أحمد" required>
+        </div>
+        <div class="field">
+          <label for="uUsername">اسم الدخول *</label>
+          <input id="uUsername" type="text" placeholder="مثال: ahmed — كلمة واحدة بدون مسافات" required dir="ltr" style="text-align:left">
         </div>
         <div class="field">
           <label for="uEmail">البريد الإلكتروني *</label>
@@ -570,11 +574,19 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   async function handleAuthSubmit(e){
     e.preventDefault();
     if(!db){ showAuthMsg("تعذّر تحميل مكتبة Supabase من الإنترنت. تأكد من الاتصال بالإنترنت وأعد تحميل الصفحة.", false); return; }
-    var email = $("authEmail").value.trim();
+    var login = $("authLogin").value.trim();
     var password = $("authPassword").value;
-    if(!email || !password){ showAuthMsg("من فضلك املا البريد الإلكتروني وكلمة السر.", false); return; }
+    if(!login || !password){ showAuthMsg("من فضلك املا اسم المستخدم وكلمة السر.", false); return; }
     $("authSubmitBtn").disabled = true;
     try{
+      /* الدخول بالاسم: نجيب الإيميل المقابل للاسم من جدول usernames، أو نستخدم الإيميل مباشرة لو اتكتب */
+      var email = login;
+      if(login.indexOf("@") === -1){
+        var lookup = await db.from("usernames").select("email").eq("username", login.toLowerCase()).maybeSingle();
+        if(lookup.error) throw lookup.error;
+        if(!lookup.data){ showAuthMsg("اسم المستخدم غير موجود. تأكد من الاسم وحاول مرة أخرى.", false); return; }
+        email = lookup.data.email;
+      }
       var res = await db.auth.signInWithPassword({ email: email, password: password });
       if(res.error) throw res.error;
       if(!res.data.session) throw new Error("تعذّر تسجيل الدخول. تأكد من البيانات وحاول مرة أخرى.");
@@ -1170,10 +1182,12 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     e.preventDefault();
     if(!isAdmin()){ showUserMsg("إدارة الحسابات متاحة لحساب الأدمن فقط.", false); return; }
     var name = $("uName").value.trim();
+    var username = $("uUsername").value.trim().toLowerCase();
     var email = $("uEmail").value.trim();
     var password = $("uPassword").value;
     var role = $("uRole").value;
-    if(!name || !email || !password){ showUserMsg("من فضلك املا الاسم والبريد الإلكتروني وكلمة السر.", false); return; }
+    if(!name || !username || !email || !password){ showUserMsg("من فضلك املا الاسم واسم الدخول والبريد الإلكتروني وكلمة السر.", false); return; }
+    if(/\s/.test(username)){ showUserMsg("اسم الدخول لازم يكون كلمة واحدة بدون مسافات.", false); return; }
     if(password.length < 6){ showUserMsg("كلمة السر لازم تكون 6 أحرف على الأقل.", false); return; }
     var btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
@@ -1187,7 +1201,10 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         options: { data: { name: name, role: role } }
       });
       if(res.error) throw res.error;
-      showUserMsg("تم إنشاء حساب " + name + " (" + (role === "admin" ? "أدمن" : "موظف") + ") بنجاح." +
+      /* حفظ اسم الدخول مقابل الإيميل عشان يدخل بيه بعد كده */
+      var ins = await db.from("usernames").insert({ username: username, email: email });
+      if(ins.error) throw new Error("تم إنشاء الحساب لكن تعذّر حفظ اسم الدخول: " + ins.error.message);
+      showUserMsg("تم إنشاء حساب " + name + " (" + (role === "admin" ? "أدمن" : "موظف") + ") بنجاح. اسم الدخول: " + username + "." +
         (res.data.session ? "" : " لو طُلب تأكيد البريد، فعّل الحساب من الإيميل قبل أول دخول."), true);
       $("userForm").reset();
     }catch(err){
