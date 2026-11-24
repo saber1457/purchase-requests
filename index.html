@@ -139,7 +139,14 @@ legend{font-weight:800;font-size:14px;padding:0 6px;color:var(--accent)}
 
 /* Toolbar */
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
-.toolbar .search{flex:1 1 240px}
+.toolbar .search{flex:1 1 240px;position:relative}
+.combo-list{position:absolute;top:calc(100% + 6px);right:0;left:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-height:300px;overflow:auto;z-index:30}
+.combo-item{display:flex;flex-direction:column;gap:2px;width:100%;text-align:right;padding:10px 12px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.combo-item:last-child{border-bottom:0}
+.combo-item.active,.combo-item:hover{background:var(--accent-soft)}
+.combo-item .c-num{font-weight:700}
+.combo-item .c-desc{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.combo-item .c-meta{font-size:12px;color:var(--muted)}
 .toolbar label{display:block;font-weight:800;font-size:13.5px;margin-bottom:6px}
 .toolbar input,.toolbar select{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:16px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
@@ -319,7 +326,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     <div class="toolbar">
       <div class="search">
         <label for="q">بحث</label>
-        <input id="q" type="search" placeholder="رقم الطلب أو كلمة من الوصف…" autocomplete="off">
+        <input id="q" type="search" placeholder="رقم الطلب أو كلمة من الوصف…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="comboList" aria-autocomplete="list">
+        <div class="combo-list" id="comboList" role="listbox" aria-label="اقتراحات البحث" hidden></div>
       </div>
       <div class="admin-only" id="importWrap">
         <label for="importFile">استيراد من ملف CSV</label>
@@ -1065,6 +1073,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       $("q").value = "";
       filter = "all";
       Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(c){ c.classList.toggle("active", c.getAttribute("data-f")==="all"); c.setAttribute("aria-pressed", c.getAttribute("data-f")==="all" ? "true" : "false"); });
+      hideCombo();
       render();
       return;
     }
@@ -1117,10 +1126,77 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   });
 
   $("q").addEventListener("input", render);
+  /* كومبوبوكس البحث: اقتراحات من السجل أثناء الكتابة، والاختيار يصفّي السجل على الطلب */
+  var comboActive = -1;
+  var comboItems = [];
+  function comboQuery(){
+    var q = $("q").value.trim().toLowerCase();
+    if(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(q)) return "";
+    return q;
+  }
+  function hideCombo(){
+    $("comboList").hidden = true;
+    $("q").setAttribute("aria-expanded", "false");
+    comboActive = -1; comboItems = [];
+  }
+  function renderCombo(){
+    var q = comboQuery();
+    var box = $("comboList");
+    if(!q){ hideCombo(); return; }
+    var list = requests.filter(function(r){
+      var hay = (r.number+" "+r.desc+" "+(r.notes||"")+" "+fmt(r.date)+" "+fmt(r.quotes)+" "+fmt(r.decision)+" "+fmt(r.exec)+" "+statusOf(r).label).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    }).slice(0, 8);
+    comboItems = list;
+    comboActive = -1;
+    if(!list.length){ hideCombo(); return; }
+    box.innerHTML = list.map(function(r,i){
+      return '<button type="button" class="combo-item" role="option" id="comboOpt'+i+'" data-combo-idx="'+i+'">'+
+        '<span class="c-num">طلب رقم '+esc(r.number)+'</span>'+
+        '<span class="c-desc">'+esc(r.desc)+'</span>'+
+        '<span class="c-meta">'+esc(fmt(r.date))+' • '+esc(statusOf(r).label)+'</span></button>';
+    }).join("");
+    box.hidden = false;
+    $("q").setAttribute("aria-expanded", "true");
+  }
+  function markComboActive(){
+    Array.prototype.forEach.call(document.querySelectorAll(".combo-item"), function(el, i){
+      el.classList.toggle("active", i === comboActive);
+    });
+    if(comboActive >= 0){
+      var el = document.getElementById("comboOpt"+comboActive);
+      if(el) el.scrollIntoView({block:"nearest"});
+    }
+  }
+  function pickCombo(i){
+    var r = comboItems[i];
+    if(!r) return;
+    $("q").value = r.number;
+    hideCombo();
+    render();
+    var row = document.querySelector("tbody tr");
+    if(row) row.scrollIntoView({block:"nearest", behavior:"smooth"});
+  }
+  $("comboList").addEventListener("mousedown", function(e){
+    e.preventDefault();
+    var it = e.target.closest(".combo-item");
+    if(it) pickCombo(Number(it.getAttribute("data-combo-idx")));
+  });
+  $("q").addEventListener("input", renderCombo);
+  $("q").addEventListener("focus", renderCombo);
+  $("q").addEventListener("blur", function(){ setTimeout(hideCombo, 150); });
+  $("q").addEventListener("keydown", function(e){
+    if($("comboList").hidden) return;
+    if(e.key === "ArrowDown"){ e.preventDefault(); comboActive = (comboActive + 1) % comboItems.length; markComboActive(); }
+    else if(e.key === "ArrowUp"){ e.preventDefault(); comboActive = (comboActive - 1 + comboItems.length) % comboItems.length; markComboActive(); }
+    else if(e.key === "Enter" && comboActive >= 0){ e.preventDefault(); pickCombo(comboActive); }
+    else if(e.key === "Escape"){ hideCombo(); }
+  });
   $("chips").addEventListener("click", function(e){
     var chip = e.target.closest(".chip"); if(!chip) return;
     filter = chip.getAttribute("data-f");
     Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(c){ c.classList.toggle("active", c===chip); c.setAttribute("aria-pressed", c===chip ? "true" : "false"); });
+    hideCombo();
     render();
   });
   $("heroRefresh").addEventListener("click", function(){ loadRequests(); });
