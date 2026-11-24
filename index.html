@@ -339,7 +339,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       <button type="button" class="chip" data-f="new">مسجل</button>
       <button type="button" class="chip" data-f="quotes">عروض الأسعار</button>
       <button type="button" class="chip" data-f="decision">تم البت</button>
-      <button type="button" class="chip" data-f="done">منفذ</button>
+      <button type="button" class="chip" data-f="done">تم التنفيذ</button>
     </div>
 
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
@@ -654,7 +654,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 
   /* ---------- العرض ---------- */
   function statusOf(r){
-    if(r.exec) return {key:"done", label:"منفذ"};
+    if(r.exec) return {key:"done", label:"تم التنفيذ"};
     if(r.decision) return {key:"decision", label:"تم البت"};
     if(r.quotes) return {key:"quotes", label:"عروض الأسعار"};
     return {key:"new", label:"مسجل"};
