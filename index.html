@@ -141,6 +141,9 @@ legend{font-weight:800;font-size:14px;padding:0 6px;color:var(--accent)}
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
 .toolbar .search{flex:1 1 240px;position:relative}
 .combo-list{position:absolute;top:calc(100% + 6px);right:0;left:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-height:300px;overflow:auto;z-index:30}
+.search-box{position:relative}
+#q{padding-right:42px}
+.combo-toggle{position:absolute;top:50%;right:6px;transform:translateY(-50%);border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;padding:8px 6px;cursor:pointer}
 .combo-item{display:flex;flex-direction:column;gap:2px;width:100%;text-align:right;padding:10px 12px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
 .combo-item:last-child{border-bottom:0}
 .combo-item.active,.combo-item:hover{background:var(--accent-soft)}
@@ -326,7 +329,10 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     <div class="toolbar">
       <div class="search">
         <label for="q">بحث</label>
-        <input id="q" type="search" placeholder="رقم الطلب أو كلمة من الوصف…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="comboList" aria-autocomplete="list">
+        <div class="search-box">
+          <input id="q" type="search" placeholder="رقم الطلب أو كلمة من الوصف…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="comboList" aria-autocomplete="list">
+          <button type="button" id="comboToggle" class="combo-toggle" aria-label="عرض كل أرقام الطلبات" title="عرض كل الأرقام">▾</button>
+        </div>
         <div class="combo-list" id="comboList" role="listbox" aria-label="اقتراحات البحث" hidden></div>
       </div>
       <div class="admin-only" id="importWrap">
@@ -1154,12 +1160,16 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   }
   function renderCombo(){
     var q = comboQuery();
-    var box = $("comboList");
     if(!q){ hideCombo(); return; }
     var list = requests.filter(function(r){
       var hay = (r.number+" "+r.desc+" "+(r.notes||"")+" "+fmt(r.date)+" "+fmt(r.quotes)+" "+fmt(r.decision)+" "+fmt(r.exec)+" "+statusOf(r).label).toLowerCase();
       return hay.indexOf(q) !== -1;
     }).slice(0, 8);
+    showComboList(list);
+  }
+  /* عرض قائمة اقتراحات جاهزة في الكومبوبوكس */
+  function showComboList(list){
+    var box = $("comboList");
     comboItems = list;
     comboActive = -1;
     if(!list.length){ hideCombo(); return; }
@@ -1171,6 +1181,11 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     }).join("");
     box.hidden = false;
     $("q").setAttribute("aria-expanded", "true");
+  }
+  /* سهم خانة البحث: يعرض كل أرقام الطلبات المسجلة للاختيار منها */
+  function toggleComboAll(){
+    if(!$("comboList").hidden){ hideCombo(); return; }
+    showComboList(requests.slice(0, 50));
   }
   function markComboActive(){
     Array.prototype.forEach.call(document.querySelectorAll(".combo-item"), function(el, i){
@@ -1197,6 +1212,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   });
   $("q").addEventListener("input", renderCombo);
   $("q").addEventListener("focus", renderCombo);
+  $("comboToggle").addEventListener("mousedown", function(e){ e.preventDefault(); });
+  $("comboToggle").addEventListener("click", toggleComboAll);
   $("q").addEventListener("blur", function(){ setTimeout(hideCombo, 150); });
   $("q").addEventListener("keydown", function(e){
     if($("comboList").hidden) return;
