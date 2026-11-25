@@ -1183,7 +1183,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var box = wrap.querySelector(".item-suggest");
     if(!box) return;
     var q = (input.value || "").trim().toLowerCase();
-    var list = showAll ? catalog.slice(0, 50) : catalog.filter(function(it){
+    var list = showAll ? catalog.slice(0, 500) : catalog.filter(function(it){
       return !q || (it.number + " " + it.name).toLowerCase().indexOf(q) !== -1;
     }).slice(0, 8);
     if(!list.length){ box.hidden = true; box.innerHTML = ""; return; }
