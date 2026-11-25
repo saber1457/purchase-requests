@@ -93,6 +93,8 @@ a{color:var(--accent)}
 .item-row input{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:16px}
 .item-num-wrap{position:relative}
 .item-num-wrap input{padding-right:36px}
+.item-name-wrap{position:relative}
+.item-name-wrap input{padding-right:36px}
 .items-list{margin-top:6px;font-size:13px;color:var(--muted);line-height:1.7}
 .items-list .item-line{display:block}
 .items-list b{color:var(--ink)}
@@ -1073,7 +1075,10 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         '<input type="text" placeholder="رقم الصنف" maxlength="50" autocomplete="off" data-item-num="'+i+'" value="'+esc(it.number)+'">' +
         '<button type="button" class="combo-toggle" data-item-arrow="'+i+'" aria-label="عرض كل الأصناف" title="عرض كل الأصناف">▾</button>' +
         '</div>' +
+        '<div class="item-name-wrap">' +
         '<input type="text" placeholder="اسم الصنف" maxlength="200" data-item-name="'+i+'" value="'+esc(it.name)+'">' +
+        '<button type="button" class="combo-toggle" data-item-name-arrow="'+i+'" aria-label="عرض كل الأصناف" title="عرض كل الأصناف">▾</button>' +
+        '</div>' +
         '<button type="button" class="btn btn-outline btn-sm" data-item-del="'+i+'" aria-label="حذف الصنف">✕</button>' +
         '</div>' +
         '<div class="combo-list item-suggest" hidden></div>' +
@@ -1103,10 +1108,10 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var n = e.target.getAttribute("data-item-num");
     var m = e.target.getAttribute("data-item-name");
     if(n !== null){ formItems[Number(n)].number = e.target.value; showItemSuggest(e.target); }
-    if(m !== null) formItems[Number(m)].name = e.target.value;
+    if(m !== null){ formItems[Number(m)].name = e.target.value; showItemSuggest(e.target); }
   });
   $("itemsEditor").addEventListener("focusin", function(e){
-    if(e.target.getAttribute("data-item-num") !== null) showItemSuggest(e.target);
+    if(e.target.getAttribute("data-item-num") !== null || e.target.getAttribute("data-item-name") !== null) showItemSuggest(e.target);
   });
   $("itemsEditor").addEventListener("focusout", function(e){
     if(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".item-suggest")) return;
@@ -1121,11 +1126,11 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         e.preventDefault();
         var pv = sug.previousElementSibling;
         if(pv) pv.focus();
-        else { var inp = sug.closest(".item-row-wrap").querySelector("[data-item-num]"); if(inp) inp.focus(); }
+        else { var inp = itemSugOpener || sug.closest(".item-row-wrap").querySelector("[data-item-num]"); if(inp) inp.focus(); }
       }
       return;
     }
-    if(e.target.getAttribute("data-item-num") === null) return;
+    if(e.target.getAttribute("data-item-num") === null && e.target.getAttribute("data-item-name") === null) return;
     var wrap = e.target.closest(".item-row-wrap");
     var box = wrap ? wrap.querySelector(".item-suggest") : null;
     if(!box || box.hidden) return;
@@ -1184,9 +1189,18 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var inp = row ? row.querySelector("[data-item-num]") : null;
     if(inp){ inp.focus(); showItemSuggest(inp, true); }
   }
+  /* سهم ▾ في خانة اسم الصنف: يعرض كل أصناف الدليل للاختيار منها */
+  function showAllItemSuggestName(idx){
+    var rows = document.querySelectorAll(".item-row");
+    var row = rows[idx];
+    var inp = row ? row.querySelector("[data-item-name]") : null;
+    if(inp){ inp.focus(); showItemSuggest(inp, true); }
+  }
   $("itemsEditor").addEventListener("mousedown", function(e){
     var a = e.target.closest("[data-item-arrow]");
     if(a){ e.preventDefault(); showAllItemSuggest(Number(a.getAttribute("data-item-arrow"))); return; }
+    var na = e.target.closest("[data-item-name-arrow]");
+    if(na){ e.preventDefault(); showAllItemSuggestName(Number(na.getAttribute("data-item-name-arrow"))); return; }
     var s = e.target.closest(".combo-item[data-sug-num]");
     if(!s) return;
     e.preventDefault();
@@ -1195,10 +1209,13 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   $("itemsEditor").addEventListener("click", function(e){
     var a = e.target.closest("[data-item-arrow]");
     if(a){ showAllItemSuggest(Number(a.getAttribute("data-item-arrow"))); return; }
+    var na = e.target.closest("[data-item-name-arrow]");
+    if(na){ showAllItemSuggestName(Number(na.getAttribute("data-item-name-arrow"))); return; }
     var s = e.target.closest(".combo-item[data-sug-num]");
     if(!s) return;
     pickItemSuggestion(s);
   });
+  var itemSugOpener = null;
   /* قائمة اقتراحات الدليل تحت خانة رقم الصنف في نموذج الطلب */
   function hideAllItemSuggest(){
     Array.prototype.forEach.call(document.querySelectorAll(".item-suggest"), function(box){ box.hidden = true; box.innerHTML = ""; });
@@ -1208,12 +1225,13 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     if(!wrap) return;
     var box = wrap.querySelector(".item-suggest");
     if(!box) return;
+    itemSugOpener = input;
     var q = (input.value || "").trim().toLowerCase();
     var list = showAll ? catalog.slice(0, 500) : catalog.filter(function(it){
       return !q || (it.number + " " + it.name).toLowerCase().indexOf(q) !== -1;
     }).slice(0, 8);
     if(!list.length){ box.hidden = true; box.innerHTML = ""; return; }
-    var idx = Number(input.getAttribute("data-item-num"));
+    var idx = Number(input.getAttribute("data-item-num") !== null ? input.getAttribute("data-item-num") : input.getAttribute("data-item-name"));
     box.innerHTML = list.map(function(it){
       return '<button type="button" class="combo-item" data-sug-num="' + esc(it.number) + '" data-sug-name="' + esc(it.name) + '" data-sug-row="' + idx + '">' +
         '<span class="c-num">رقم الصنف ' + esc(it.number) + '</span>' +
