@@ -96,6 +96,7 @@ a{color:var(--accent)}
 .items-list b{color:var(--ink)}
 #catalogCard table{min-width:0}
 #catalogCard{position:relative}
+.cat-edit-input{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--surface);color:var(--text)}
 .card-close{position:absolute;top:12px;left:12px;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface-muted);color:var(--text);font-size:16px;line-height:1;cursor:pointer}
 .field input:focus,.field textarea:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 fieldset{border:1.5px dashed var(--line);border-radius:12px;padding:12px;margin:0}
@@ -599,6 +600,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   var filter = "all";
   var pendingDelete = null;
   var pendingCatDelete = null;
+  var editingCatId = null;
+  var editingCatDraft = null;
   var stepTargetId = null;
   var stepField = null;
   var currentUser = null;
@@ -1811,8 +1814,17 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     }
     $("catEmpty").style.display = "none";
     tb.innerHTML = list.map(function(it, i){
+      if(String(it.id) === String(editingCatId)){
+        var d = editingCatDraft || { number: it.number, name: it.name };
+        return "<tr><td class=\"num\">" + (i+1) + "</td>" +
+          "<td><input type=\"text\" class=\"cat-edit-input\" data-cat-edit-num value=\"" + esc(d.number) + "\" maxlength=\"50\" autocomplete=\"off\"></td>" +
+          "<td><input type=\"text\" class=\"cat-edit-input\" data-cat-edit-name value=\"" + esc(d.name) + "\" maxlength=\"200\"></td>" +
+          "<td><button type=\"button\" class=\"btn btn-accent btn-sm\" data-cat-save=\"" + esc(String(it.id)) + "\">✓ حفظ</button> " +
+          "<button type=\"button\" class=\"btn btn-outline btn-sm\" data-cat-cancel>✕ إلغاء</button></td></tr>";
+      }
       return "<tr><td class=\"num\">" + (i+1) + "</td><td class=\"num\"><b>" + esc(it.number) + "</b></td><td>" + esc(it.name) + "</td>" +
-        "<td><button type=\"button\" class=\"btn btn-danger btn-sm\" data-cat-del=\"" + esc(String(it.id)) + "\">حذف</button></td></tr>";
+        "<td><button type=\"button\" class=\"btn btn-outline btn-sm\" data-cat-edit=\"" + esc(String(it.id)) + "\">✏️ تعديل</button> " +
+        "<button type=\"button\" class=\"btn btn-danger btn-sm\" data-cat-del=\"" + esc(String(it.id)) + "\">حذف</button></td></tr>";
     }).join("");
   }
   function showCatMsg(text, ok){
@@ -1893,7 +1905,67 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     };
     reader.readAsText(file, "UTF-8");
   });
+  /* تعديل صنف من الدليل مباشرة في نفس الصف */
+  async function saveCatEdit(id){
+    var tb = $("catTbody");
+    var numInput = tb.querySelector("[data-cat-edit-num]");
+    var nameInput = tb.querySelector("[data-cat-edit-name]");
+    if(!numInput || !nameInput) return;
+    var num = numInput.value.trim();
+    var name = nameInput.value.trim();
+    if(!num || !name){ showCatMsg("لازم رقم الصنف واسم الصنف.", false); return; }
+    try{
+      var res = await db.from(CATALOG_TABLE).update({ item_number: num, item_name: name }).eq("id", id);
+      if(res.error) throw res.error;
+      editingCatId = null;
+      editingCatDraft = null;
+      await loadCatalog();
+      showCatMsg("تم تعديل الصنف.", true);
+    }catch(err){
+      if(err && (err.code === "23505" || /duplicate/i.test(err.message || ""))) showCatMsg("رقم الصنف ده موجود قبل كده في الدليل.", false);
+      else showCatMsg("تعذّر التعديل: " + friendlyErr(err), false);
+      console.error(err);
+    }
+  }
+  $("catTbody").addEventListener("input", function(e){
+    if(!editingCatDraft) return;
+    if(e.target.hasAttribute("data-cat-edit-num")) editingCatDraft.number = e.target.value;
+    if(e.target.hasAttribute("data-cat-edit-name")) editingCatDraft.name = e.target.value;
+  });
+  $("catTbody").addEventListener("keydown", function(e){
+    if(e.key === "Escape" && editingCatId){
+      editingCatId = null; editingCatDraft = null; renderCatalog();
+      return;
+    }
+    if(e.key !== "Enter") return;
+    if(e.target.hasAttribute("data-cat-edit-num")){
+      e.preventDefault();
+      var ni = $("catTbody").querySelector("[data-cat-edit-name]");
+      if(ni) ni.focus();
+    } else if(e.target.hasAttribute("data-cat-edit-name")){
+      e.preventDefault();
+      var row = e.target.closest("tr");
+      var sv = row ? row.querySelector("[data-cat-save]") : null;
+      if(sv) saveCatEdit(sv.getAttribute("data-cat-save"));
+    }
+  });
   $("catTbody").addEventListener("click", function(e){
+    var ed = e.target.closest("[data-cat-edit]");
+    if(ed && isAdmin()){
+      var eid = ed.getAttribute("data-cat-edit");
+      var eit = null;
+      catalog.forEach(function(x){ if(String(x.id)===String(eid)) eit = x; });
+      editingCatId = eid;
+      editingCatDraft = eit ? { number: eit.number, name: eit.name } : null;
+      renderCatalog();
+      var inp = $("catTbody").querySelector("[data-cat-edit-num]");
+      if(inp){ inp.focus(); inp.select(); }
+      return;
+    }
+    var sv = e.target.closest("[data-cat-save]");
+    if(sv && isAdmin()){ saveCatEdit(sv.getAttribute("data-cat-save")); return; }
+    var cx = e.target.closest("[data-cat-cancel]");
+    if(cx){ editingCatId = null; editingCatDraft = null; renderCatalog(); return; }
     var b = e.target.closest("[data-cat-del]");
     if(!b || !isAdmin()) return;
     var id = b.getAttribute("data-cat-del");
