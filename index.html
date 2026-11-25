@@ -93,6 +93,7 @@ a{color:var(--accent)}
 .items-list{margin-top:6px;font-size:13px;color:var(--muted);line-height:1.7}
 .items-list .item-line{display:block}
 .items-list b{color:var(--ink)}
+#catalogCard table{min-width:0}
 .field input:focus,.field textarea:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 fieldset{border:1.5px dashed var(--line);border-radius:12px;padding:12px;margin:0}
 legend{font-weight:800;font-size:14px;padding:0 6px;color:var(--accent)}
@@ -274,6 +275,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       <button class="btn btn-ghost" id="heroExport" type="button">⬇️ تصدير Excel</button>
       <button class="btn btn-ghost" id="heroRefresh" type="button">↻ تحديث</button>
       <button class="btn btn-ghost" id="accountsBtn" type="button" aria-expanded="false" aria-controls="accountsCard">⚙️ إدارة الحسابات</button>
+      <button class="btn btn-ghost" id="catalogBtn" type="button" aria-expanded="false" aria-controls="catalogCard">📋 دليل الأصناف</button>
       <button class="btn btn-ghost" id="copyLinkBtn" type="button">🔗 نسخ رابط التطبيق</button>
     </div>
   </header>
@@ -318,6 +320,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         <label>أصناف الطلب</label>
         <div id="itemsEditor"></div>
         <button class="btn btn-outline btn-sm" type="button" id="addItemBtn" style="margin-top:4px">+ إضافة صنف</button>
+        <datalist id="catalogData"></datalist>
       </div>
       <div class="field" style="margin-top:12px">
         <label for="fNotes">ملاحظات</label>
@@ -441,6 +444,44 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         <button class="btn btn-outline" type="button" id="changePwBtn">تغيير كلمة السر</button>
       </div>
       <div class="msg" id="pwMsg" role="status"></div>
+    </div>
+  </section>
+
+  <!-- دليل الأصناف — الإدارة للأدمن فقط، والقراءة لكل المسجلين -->
+  <section class="card admin-only" id="catalogCard" hidden>
+    <h2>دليل الأصناف</h2>
+    <p class="hint">كل الأصناف اللي بتستخدمها في طلبات الشراء: رقم الصنف واسم الصنف. تقدر تضيف صنف يدوي أو تستورد ملف CSV فيه عمودين: رقم الصنف، اسم الصنف. الأصناف هنا بتظهر كاقتراحات وانت بتسجل طلب جديد.</p>
+    <div class="grid">
+      <div class="field">
+        <label for="catNumber">رقم الصنف *</label>
+        <input id="catNumber" type="text" placeholder="مثال: 101" maxlength="50" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="catName">اسم الصنف *</label>
+        <input id="catName" type="text" placeholder="مثال: مواسير حديد" maxlength="200" autocomplete="off">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-accent" type="button" id="catAddBtn">إضافة الصنف</button>
+    </div>
+    <div class="msg" id="catMsg" role="status"></div>
+    <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
+      <h3 style="font-size:16px;margin-bottom:10px">استيراد من ملف CSV</h3>
+      <p class="hint">الملف لازم يكون فيه عمودين: رقم الصنف واسم الصنف (ممكن ترويسة في أول سطر). الأرقام المكررة بتتخطى.</p>
+      <input id="catalogFile" type="file" accept=".csv" style="padding:7px 10px">
+    </div>
+    <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
+      <h3 style="font-size:16px;margin-bottom:10px">الأصناف المسجلة (<span id="catCount">0</span>)</h3>
+      <div class="field" style="margin-bottom:10px">
+        <input id="catSearch" type="search" placeholder="ابحث برقم الصنف أو اسمه…" autocomplete="off">
+      </div>
+      <div class="table-scroll">
+        <table aria-label="دليل الأصناف">
+          <thead><tr><th class="num">م</th><th>رقم الصنف</th><th>اسم الصنف</th><th>إجراءات</th></tr></thead>
+          <tbody id="catTbody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="catEmpty" style="display:none"></div>
     </div>
   </section>
 
@@ -623,6 +664,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     /* الموظف: إخفاء زر إدارة الحسابات والاستيراد */
     $("accountsBtn").style.display = isAdmin() ? "" : "none";
     $("accountsCard").hidden = true;
+    $("catalogBtn").style.display = isAdmin() ? "" : "none";
+    $("catalogCard").hidden = true;
     $("importWrap").style.display = isAdmin() ? "" : "none";
     $("employeeHint").hidden = isAdmin();
   }
@@ -670,6 +713,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     showApp();
     setSync("جاري تحميل السجل من قاعدة البيانات المشتركة…", null);
     await loadRequests();
+    await loadCatalog();
     startRealtime();
     if(refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(function(){ if(!document.hidden) loadRequests(true); }, 30000);
@@ -688,6 +732,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       stopRealtime();
       if(refreshTimer){ clearInterval(refreshTimer); refreshTimer = null; }
       requests = [];
+      catalog = [];
       currentUser = null;
       showLogin();
     }
@@ -740,6 +785,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       realtimeChannel = db.channel("purchase-requests-changes")
         .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, function(){ loadRequests(true); })
         .on("postgres_changes", { event: "*", schema: "public", table: ITEMS_TABLE }, function(){ loadRequests(true); })
+        .on("postgres_changes", { event: "*", schema: "public", table: CATALOG_TABLE }, function(){ loadCatalog(); })
         .subscribe(function(status){
           if(status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED"){
             console.warn("Realtime غير متاح حاليًا (" + status + ") — الاعتماد على التحديث كل 30 ثانية.");
@@ -991,7 +1037,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var box = $("itemsEditor");
     box.innerHTML = formItems.map(function(it, i){
       return '<div class="item-row">' +
-        '<input type="text" placeholder="رقم الصنف" maxlength="50" data-item-num="'+i+'" value="'+esc(it.number)+'">' +
+        '<input type="text" placeholder="رقم الصنف" maxlength="50" list="catalogData" data-item-num="'+i+'" value="'+esc(it.number)+'">' +
         '<input type="text" placeholder="اسم الصنف" maxlength="200" data-item-name="'+i+'" value="'+esc(it.name)+'">' +
         '<button type="button" class="btn btn-outline btn-sm" data-item-del="'+i+'" aria-label="حذف الصنف">✕</button>' +
       '</div>';
@@ -1021,6 +1067,20 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var m = e.target.getAttribute("data-item-name");
     if(n !== null) formItems[Number(n)].number = e.target.value;
     if(m !== null) formItems[Number(m)].name = e.target.value;
+  });
+  /* اختيار رقم صنف من الدليل يملأ اسم الصنف تلقائيًا لو خانة الاسم فاضية */
+  $("itemsEditor").addEventListener("change", function(e){
+    var n = e.target.getAttribute("data-item-num");
+    if(n === null) return;
+    var found = catalogByNumber(e.target.value);
+    if(!found) return;
+    var idx = Number(n);
+    var row = e.target.closest(".item-row");
+    var nameInput = row ? row.querySelector("[data-item-name]") : null;
+    if(nameInput && !nameInput.value.trim()){
+      nameInput.value = found.name;
+      formItems[idx].name = found.name;
+    }
   });
   $("itemsEditor").addEventListener("click", function(e){
     var d = e.target.closest("[data-item-del]");
@@ -1344,7 +1404,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     hideCombo();
     render();
   });
-  $("heroRefresh").addEventListener("click", function(){ loadRequests(); });
+  $("heroRefresh").addEventListener("click", function(){ loadRequests(); loadCatalog(); });
   $("copyLinkBtn").addEventListener("click", async function(){
     var url = window.location.href;
     var done = function(){
@@ -1550,6 +1610,137 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       $("importFile").value = "";
     };
     reader.readAsText(file, "UTF-8");
+  });
+
+  /* ---------- دليل الأصناف ---------- */
+  var CATALOG_TABLE = "item_catalog";
+  var catalog = [];
+  function catalogByNumber(num){
+    num = String(num || "").trim();
+    for(var i=0;i<catalog.length;i++) if(catalog[i].number === num) return catalog[i];
+    return null;
+  }
+  async function loadCatalog(){
+    try{
+      var res = await withTimeout(db.from(CATALOG_TABLE).select("*").order("item_number", { ascending: true }));
+      if(res.error) throw res.error;
+      catalog = (res.data || []).map(function(row){ return { id: row.id, number: row.item_number || "", name: row.item_name || "" }; });
+      renderCatalog();
+      renderCatalogDatalist();
+    }catch(err){ console.error("catalog load failed", err); }
+  }
+  function renderCatalogDatalist(){
+    var dl = $("catalogData");
+    if(!dl) return;
+    dl.innerHTML = catalog.map(function(it){
+      return '<option value="' + esc(it.number) + '">' + esc(it.name) + '</option>';
+    }).join("");
+  }
+  function renderCatalog(){
+    var q = ($("catSearch").value || "").trim().toLowerCase();
+    var list = catalog.filter(function(it){
+      return !q || (it.number + " " + it.name).toLowerCase().indexOf(q) !== -1;
+    });
+    $("catCount").textContent = catalog.length;
+    var tb = $("catTbody");
+    if(!list.length){
+      tb.innerHTML = "";
+      var ce = $("catEmpty");
+      ce.innerHTML = catalog.length === 0 ? "<b>لا توجد أصناف مسجلة بعد — أضف صنفًا يدويًا أو استورد ملف CSV</b>" : "<b>لا توجد أصناف مطابقة للبحث</b>";
+      ce.style.display = "block";
+      return;
+    }
+    $("catEmpty").style.display = "none";
+    tb.innerHTML = list.map(function(it, i){
+      return "<tr><td class=\"num\">" + (i+1) + "</td><td class=\"num\"><b>" + esc(it.number) + "</b></td><td>" + esc(it.name) + "</td>" +
+        "<td><button type=\"button\" class=\"btn btn-danger btn-sm\" data-cat-del=\"" + esc(String(it.id)) + "\">حذف</button></td></tr>";
+    }).join("");
+  }
+  function showCatMsg(text, ok){
+    var m = $("catMsg");
+    m.textContent = text;
+    m.className = "msg " + (ok ? "ok" : "err");
+    if(ok) setTimeout(function(){ m.className = "msg"; m.textContent = ""; }, 4000);
+  }
+  $("catalogBtn").addEventListener("click", function(){
+    var c = $("catalogCard");
+    c.hidden = !c.hidden;
+    $("catalogBtn").setAttribute("aria-expanded", c.hidden ? "false" : "true");
+    if(!c.hidden){ loadCatalog(); c.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  });
+  $("catSearch").addEventListener("input", renderCatalog);
+  $("catAddBtn").addEventListener("click", async function(){
+    if(!isAdmin()){ showCatMsg("إضافة الأصناف متاحة لحساب الأدمن فقط.", false); return; }
+    var num = $("catNumber").value.trim();
+    var name = $("catName").value.trim();
+    if(!num || !name){ showCatMsg("من فضلك املا رقم الصنف واسم الصنف.", false); return; }
+    if(catalogByNumber(num)){ showCatMsg("رقم الصنف ده مسجل قبل كده.", false); return; }
+    $("catAddBtn").disabled = true;
+    try{
+      var res = await db.from(CATALOG_TABLE).insert([{ item_number: num, item_name: name }]).select("*").single();
+      if(res.error) throw res.error;
+      $("catNumber").value = ""; $("catName").value = "";
+      await loadCatalog();
+      showCatMsg("تمت إضافة الصنف إلى الدليل.", true);
+    }catch(err){ showCatMsg("تعذّر الإضافة: " + friendlyErr(err), false); console.error(err); }
+    finally{ $("catAddBtn").disabled = false; }
+  });
+  $("catalogFile").addEventListener("change", function(){
+    var file = this.files && this.files[0];
+    if(!file) return;
+    if(!isAdmin()){ showToast("الاستيراد متاح لحساب الأدمن فقط.", false); $("catalogFile").value = ""; return; }
+    if(file.size > 1024*1024){ showToast("حجم الملف أكبر من 1MB — قسّم الملف وحاول مرة أخرى.", false); $("catalogFile").value = ""; return; }
+    var reader = new FileReader();
+    reader.onerror = function(){ showToast("تعذّر قراءة الملف.", false); $("catalogFile").value = ""; };
+    reader.onload = async function(){
+      try{
+        var text = String(reader.result || "").replace(/^\ufeff/, "");
+        if(!text.trim()){ showToast("الملف فارغ.", false); return; }
+        var firstLine = text.split(/\r?\n/)[0] || "";
+        var delim = (firstLine.split(";").length > firstLine.split(",").length) ? ";" : ",";
+        var allRows = parseCSV(text, delim).filter(function(r){ return r.some(function(c){ return String(c).trim() !== ""; }); });
+        if(!allRows.length){ showToast("الملف لا يحتوي على بيانات.", false); return; }
+        var start = 0;
+        if(/رقم الصنف/.test(allRows[0].join(" "))) start = 1;
+        var rows = [], skipped = 0, invalid = 0;
+        var seen = {};
+        catalog.forEach(function(it){ seen[it.number] = true; });
+        allRows.slice(start).forEach(function(c){
+          var num = String(c[0] || "").trim();
+          var name = String(c[1] || "").trim();
+          if(!num || !name){ invalid++; return; }
+          if(seen[num]){ skipped++; return; }
+          seen[num] = true;
+          rows.push({ item_number: num, item_name: name });
+        });
+        if(rows.length > 500){ showToast("الملف يحتوي على أكثر من 500 صنف — قسّمه إلى ملفات أصغر.", false); return; }
+        if(!rows.length){
+          showToast(skipped ? "كل الأصناف في الملف مسجلة قبل كده — لم يتم استيراد شيء." : "لم يتم العثور على أصناف صالحة في الملف.", false);
+          return;
+        }
+        var res = await db.from(CATALOG_TABLE).insert(rows);
+        if(res.error) throw res.error;
+        await loadCatalog();
+        var msg = "تم استيراد " + rows.length + " صنف إلى الدليل.";
+        if(skipped) msg += " (تم تخطي " + skipped + " صنف مكرر).";
+        if(invalid) msg += " (تم تخطي " + invalid + " صف غير صالح).";
+        showToast(msg, true);
+      }catch(err){ showToast("تعذّر الاستيراد: " + friendlyErr(err), false); console.error(err); }
+      $("catalogFile").value = "";
+    };
+    reader.readAsText(file, "UTF-8");
+  });
+  $("catTbody").addEventListener("click", async function(e){
+    var b = e.target.closest("[data-cat-del]");
+    if(!b || !isAdmin()) return;
+    var id = b.getAttribute("data-cat-del");
+    if(!confirm("سيتم حذف هذا الصنف من الدليل نهائيًا. هل أنت متأكد؟")) return;
+    try{
+      var res = await db.from(CATALOG_TABLE).delete().eq("id", id);
+      if(res.error) throw res.error;
+      await loadCatalog();
+      showToast("تم حذف الصنف من الدليل.", true);
+    }catch(err){ showToast("تعذّر الحذف: " + friendlyErr(err), false); console.error(err); }
   });
 
   /* ---------- إدارة الحسابات (أدمن فقط) ---------- */
