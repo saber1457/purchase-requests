@@ -1113,6 +1113,16 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       if(first2) pickItemSuggestion(first2);
     }
   });
+  /* اختيار صنف من الدليل يضيف اسمه فقط (بدون رقم الصنف) إلى وصف الطلب، وبين كل صنف والتاني شرطة */
+  var lastDescAppend = { name: "", t: 0 };
+  function appendItemNameToDesc(name){
+    if(!name) return;
+    if(name === lastDescAppend.name && Date.now() - lastDescAppend.t < 1000) return;
+    var d = $("fDesc");
+    var v = (d.value || "").trim().replace(/\s*-\s*$/, "");
+    d.value = v ? v + " - " + name : name;
+    lastDescAppend = { name: name, t: Date.now() };
+  }
   /* اختيار اقتراح من قائمة الدليل: يملأ رقم الصنف واسمه وينقل التركيز لخانة الاسم */
   function pickItemSuggestion(s){
     var idx = Number(s.getAttribute("data-sug-row"));
@@ -1128,6 +1138,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       if(ni) ni.value = num;
       if(mi){ mi.value = name; mi.focus(); }
     }
+    appendItemNameToDesc(name);
     hideAllItemSuggest();
   }
   /* سهم ▾ في خانة رقم الصنف: يعرض كل أصناف الدليل للاختيار منها */
