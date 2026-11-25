@@ -365,7 +365,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       <button type="button" class="chip" data-f="decision" aria-pressed="false">تم البت</button>
       <button type="button" class="chip" data-f="done" aria-pressed="false">تم التنفيذ</button>
     </div>
-    <p class="hint" id="employeeHint" hidden>تسجيل المراحل (عروض الأسعار / البت / التنفيذ) والتعديل والحذف من حساب الأدمن.</p>
 
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">
       <button class="btn btn-accent" id="openPrint" type="button">🖨️ معاينة وطباعة السجل</button>
@@ -456,7 +455,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   <section class="card admin-only" id="catalogCard" hidden>
     <button class="card-close" type="button" id="catalogCloseBtn" aria-label="إغلاق دليل الأصناف">✕</button>
     <h2>دليل الأصناف</h2>
-    <p class="hint">كل الأصناف اللي بتستخدمها في طلبات الشراء: رقم الصنف واسم الصنف. تقدر تضيف صنف يدوي أو تستورد ملف CSV فيه عمودين: رقم الصنف، اسم الصنف. الأصناف هنا بتظهر كاقتراحات وانت بتسجل طلب جديد.</p>
     <div class="grid">
       <div class="field">
         <label for="catNumber">رقم الصنف *</label>
@@ -473,7 +471,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     <div class="msg" id="catMsg" role="status"></div>
     <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
       <h3 style="font-size:16px;margin-bottom:10px">استيراد من ملف CSV</h3>
-      <p class="hint">الملف لازم يكون فيه عمودين: رقم الصنف واسم الصنف (ممكن ترويسة في أول سطر). الأرقام المكررة بتتخطى.</p>
       <input id="catalogFile" type="file" accept=".csv" style="padding:7px 10px">
     </div>
     <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
@@ -676,7 +673,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     $("catalogBtn").style.display = isAdmin() ? "" : "none";
     $("catalogCard").hidden = true;
     $("importWrap").style.display = isAdmin() ? "" : "none";
-    $("employeeHint").hidden = isAdmin();
   }
   function showApp(){
     $("authScreen").hidden = true;
@@ -931,8 +927,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       tbody.innerHTML = "";
       cards.innerHTML = "";
       var eb0 = $("emptyBox");
-      eb0.innerHTML = "<b>ابحث برقم الطلب أو كلمة من الوصف في خانة البحث فوق، وهيظهر لك الطلب هنا</b>";
-      eb0.style.display = "block";
+      eb0.innerHTML = "";
+      eb0.style.display = "none";
       return;
     }
 
