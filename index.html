@@ -237,6 +237,22 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 .auth-card .auth-hero p{margin:4px 0 0;color:rgba(255,255,255,.85);font-size:14px}
 .auth-card .field{margin-bottom:12px}
 [hidden]{display:none !important}
+/* دليل الأصناف: خطوط أكبر وتنسيق أوضح */
+#catalogCard h2{font-size:22px}
+#catalogCard .field label{font-size:16px}
+#catalogCard .field input{font-size:18px;padding:12px 14px}
+#catalogCard table th{font-size:16.5px;padding:12px 10px}
+#catalogCard table td{font-size:18px;line-height:1.7;padding:12px 10px}
+#catalogCard table td.num b{font-size:19px}
+#catalogCard td:last-child{white-space:nowrap}
+#catalogCard .btn-sm{min-height:36px;padding:8px 12px;font-size:14px}
+#catalogCard .cat-edit-input{font-size:18px;padding:10px 12px}
+#catalogCard .msg{font-size:16px}
+#catalogCard .empty b{font-size:18px}
+@media(max-width:760px){
+  #catalogCard .table-scroll{display:block}
+  #catalogCard table{min-width:640px}
+}
 </style>
 </head>
 <body>
@@ -470,11 +486,11 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     </div>
     <div class="msg" id="catMsg" role="status"></div>
     <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
-      <h3 style="font-size:16px;margin-bottom:10px">استيراد من ملف CSV</h3>
+      <h3 style="font-size:18px;margin-bottom:10px">استيراد من ملف CSV</h3>
       <input id="catalogFile" type="file" accept=".csv" style="padding:7px 10px">
     </div>
     <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
-      <h3 style="font-size:16px;margin-bottom:10px">الأصناف المسجلة (<span id="catCount">0</span>)</h3>
+      <h3 style="font-size:18px;margin-bottom:10px">الأصناف المسجلة (<span id="catCount">0</span>)</h3>
       <div class="field" style="margin-bottom:10px">
         <input id="catSearch" type="search" placeholder="ابحث برقم الصنف أو اسمه…" autocomplete="off">
       </div>
