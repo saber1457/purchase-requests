@@ -95,6 +95,8 @@ a{color:var(--accent)}
 .items-list .item-line{display:block}
 .items-list b{color:var(--ink)}
 #catalogCard table{min-width:0}
+#catalogCard{position:relative}
+.card-close{position:absolute;top:12px;left:12px;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface-muted);color:var(--text);font-size:16px;line-height:1;cursor:pointer}
 .field input:focus,.field textarea:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 fieldset{border:1.5px dashed var(--line);border-radius:12px;padding:12px;margin:0}
 legend{font-weight:800;font-size:14px;padding:0 6px;color:var(--accent)}
@@ -449,6 +451,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 
   <!-- دليل الأصناف — الإدارة للأدمن فقط، والقراءة لكل المسجلين -->
   <section class="card admin-only" id="catalogCard" hidden>
+    <button class="card-close" type="button" id="catalogCloseBtn" aria-label="إغلاق دليل الأصناف">✕</button>
     <h2>دليل الأصناف</h2>
     <p class="hint">كل الأصناف اللي بتستخدمها في طلبات الشراء: رقم الصنف واسم الصنف. تقدر تضيف صنف يدوي أو تستورد ملف CSV فيه عمودين: رقم الصنف، اسم الصنف. الأصناف هنا بتظهر كاقتراحات وانت بتسجل طلب جديد.</p>
     <div class="grid">
@@ -1823,6 +1826,10 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     c.hidden = !c.hidden;
     $("catalogBtn").setAttribute("aria-expanded", c.hidden ? "false" : "true");
     if(!c.hidden){ loadCatalog(); c.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  });
+  $("catalogCloseBtn").addEventListener("click", function(){
+    $("catalogCard").hidden = true;
+    $("catalogBtn").setAttribute("aria-expanded", "false");
   });
   $("catSearch").addEventListener("input", renderCatalog);
   $("catAddBtn").addEventListener("click", async function(){
