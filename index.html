@@ -1126,6 +1126,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var idx = Number(s.getAttribute("data-sug-row"));
     var num = s.getAttribute("data-sug-num");
     var name = s.getAttribute("data-sug-name");
+    var wasEmpty = !(formItems[idx].number || "").trim() && !(formItems[idx].name || "").trim();
     formItems[idx].number = num;
     formItems[idx].name = name;
     var rows = document.querySelectorAll(".item-row");
@@ -1138,6 +1139,17 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     }
     appendItemNameToDesc(name);
     hideAllItemSuggest();
+    /* الصف كان فاضي قبل الاختيار: الصنف اتسجل في الوصف بس، فالصف يفضى ويرجع جاهز لاختيار الصنف اللي بعده */
+    if(wasEmpty){
+      formItems[idx] = {number:"", name:""};
+      if(row){
+        var ni2 = row.querySelector("[data-item-num]");
+        var mi2 = row.querySelector("[data-item-name]");
+        if(ni2) ni2.value = "";
+        if(mi2) mi2.value = "";
+        if(ni2) ni2.focus();
+      }
+    }
   }
   /* سهم ▾ في خانة رقم الصنف: يعرض كل أصناف الدليل للاختيار منها */
   function showAllItemSuggest(idx){
@@ -1193,9 +1205,16 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var row = e.target.closest(".item-row");
     var nameInput = row ? row.querySelector("[data-item-name]") : null;
     if(nameInput){
+      var hadName = !!(formItems[idx].name || "").trim();
       nameInput.value = found.name;
       formItems[idx].name = found.name;
       appendItemNameToDesc(found.name);
+      /* الصف كان فاضي قبل كتابة الرقم: الصنف اتسجل في الوصف بس، فالصف يفضى ويرجع جاهز لاختيار الصنف اللي بعده */
+      if(!hadName){
+        formItems[idx] = {number:"", name:""};
+        nameInput.value = "";
+        e.target.value = "";
+      }
     }
   });
 
