@@ -523,7 +523,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
 <!-- Delete confirm -->
 <div class="overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-label="تأكيد الحذف">
   <div class="confirm-box">
-    <h3>حذف الطلب؟</h3>
+    <h3 id="confirmTitle">حذف الطلب؟</h3>
     <p id="confirmText"></p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-danger" id="confirmYes" type="button">حذف نهائي</button>
@@ -1347,6 +1347,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       var d = requests.find(function(x){ return String(x.id)===del.getAttribute("data-del"); });
       if(!d) return;
       pendingDelete = d.id;
+      $("confirmTitle").textContent = "حذف الطلب؟";
       $("confirmText").textContent = "هيتم حذف الطلب رقم "+d.number+" نهائيًا من السجل.";
       $("confirmOverlay").classList.add("open");
       updateBodyLock();
@@ -1794,6 +1795,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var it = null;
     catalog.forEach(function(x){ if(String(x.id)===String(id)) it = x; });
     pendingCatDelete = id;
+    $("confirmTitle").textContent = "حذف الصنف؟";
     $("confirmText").textContent = "هيتم حذف الصنف رقم " + (it ? it.number : "") + (it ? " (" + it.name + ")" : "") + " نهائيًا من الدليل.";
     $("confirmOverlay").classList.add("open");
     updateBodyLock();
