@@ -1181,6 +1181,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   function handleFieldNav(e, order){
     var el = e.target;
     if(el.tagName === "BUTTON") return; /* الأزرار بتشتغل بالإنتر لوحدها */
+    if(el.tagName === "SELECT") return; /* القوائم المنسدلة بتشتغل بسلوك المتصفح الأصلي */
     var idx = order.indexOf(el);
     if(idx === -1) return;
     var key = e.key;
@@ -1220,6 +1221,13 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   });
   $("catalogCard").addEventListener("keydown", function(e){
     handleFieldNav(e, [$("catNumber"), $("catName"), $("catAddBtn")].filter(function(el){ return el && !el.disabled; }));
+  });
+  /* التنقل بالكيبورد في باقي نماذج التطبيق: الدخول وإدارة الحسابات */
+  $("loginForm").addEventListener("keydown", function(e){
+    handleFieldNav(e, [$("authLogin"), $("authPassword"), $("authSubmitBtn")].filter(function(el){ return el && !el.disabled; }));
+  });
+  $("accountsCard").addEventListener("keydown", function(e){
+    handleFieldNav(e, [$("uName"), $("uUsername"), $("uEmail"), $("uPassword"), $("uRole"), document.querySelector("#userForm button[type=submit]"), $("myCurrentPassword"), $("myNewPassword"), $("changePwBtn")].filter(function(el){ return el && !el.disabled; }));
   });
   $("itemsEditor").addEventListener("click", function(e){
     var d = e.target.closest("[data-item-del]");
