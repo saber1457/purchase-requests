@@ -88,6 +88,11 @@ a{color:var(--accent)}
 .field label{display:block;font-weight:800;font-size:14px;margin-bottom:6px}
 .field input,.field textarea,.field select{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:16px}
 .field textarea{min-height:74px;resize:vertical}
+.item-row{display:grid;grid-template-columns:1fr 2fr auto;gap:8px;margin-bottom:8px;align-items:center}
+.item-row input{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:16px}
+.items-list{margin-top:6px;font-size:13px;color:var(--muted);line-height:1.7}
+.items-list .item-line{display:block}
+.items-list b{color:var(--ink)}
 .field input:focus,.field textarea:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 fieldset{border:1.5px dashed var(--line);border-radius:12px;padding:12px;margin:0}
 legend{font-weight:800;font-size:14px;padding:0 6px;color:var(--accent)}
@@ -309,6 +314,11 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
           <textarea id="fDesc" placeholder="اكتب وصف الطلب وبياناته…" maxlength="2000" required></textarea>
         </div>
       </div>
+      <div class="field full" style="margin-top:12px">
+        <label>أصناف الطلب</label>
+        <div id="itemsEditor"></div>
+        <button class="btn btn-outline btn-sm" type="button" id="addItemBtn" style="margin-top:4px">+ إضافة صنف</button>
+      </div>
       <div class="field" style="margin-top:12px">
         <label for="fNotes">ملاحظات</label>
         <textarea id="fNotes" placeholder="أي ملاحظات على الطلب…" maxlength="2000"></textarea>
@@ -490,6 +500,33 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
      لا يوجد أي مفتاح سري في هذا الملف أبداً. */
   var SUPABASE_KEY = "sb_publishable_Vla_hMPIlRl46MNPSrhdgA_ouae6ycI";
   var TABLE = "purchase_requests";
+  var ITEMS_TABLE = "purchase_request_items";
+  var itemsByRequest = {};
+  function toItem(row){
+    return { id: row.id, request_id: row.request_id, number: row.item_number || "", name: row.item_name || "" };
+  }
+  function itemsOf(r){ return itemsByRequest[String(r.id)] || []; }
+  function itemsText(r){ return itemsOf(r).map(function(it){ return it.number + " " + it.name; }).join(" "); }
+  function itemsHtml(r){
+    var list = itemsOf(r);
+    if(!list.length) return "";
+    return '<div class="items-list">' + list.map(function(it){
+      return '<span class="item-line">• رقم الصنف <b>' + esc(it.number) + '</b> — ' + esc(it.name) + '</span>';
+    }).join("") + '</div>';
+  }
+  function itemsCsv(r){
+    return itemsOf(r).map(function(it){ return it.number + ": " + it.name; }).join("؛ ");
+  }
+  async function saveItems(requestId, items, isEdit){
+    if(isEdit){
+      var del = await db.from(ITEMS_TABLE).delete().eq("request_id", requestId);
+      if(del.error) throw del.error;
+    }
+    if(!items.length) return;
+    var rows = items.map(function(it){ return { request_id: requestId, item_number: it.number, item_name: it.name }; });
+    var res = await db.from(ITEMS_TABLE).insert(rows);
+    if(res.error) throw res.error;
+  }
   /* لو فشل تحميل مكتبة Supabase من CDN، لا نرمي خطأ هنا — الحارس في نهاية الملف يعرض رسالة واضحة */
   var db = null;
   if(window.supabase){
@@ -668,6 +705,18 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       if(res.error) throw res.error;
       if(mySeq !== loadSeq) return; /* استجابة قديمة — تجاهلها لو وصل طلب أحدث */
       requests = (res.data || []).map(toApp);
+      try{
+        var ires = await withTimeout(db.from(ITEMS_TABLE).select("*").order("id", { ascending: true }));
+        if(!ires.error){
+          itemsByRequest = {};
+          (ires.data || []).forEach(function(row){
+            var it = toItem(row);
+            var k = String(it.request_id);
+            if(!itemsByRequest[k]) itemsByRequest[k] = [];
+            itemsByRequest[k].push(it);
+          });
+        }
+      }catch(e){ console.error("items load failed", e); }
       loadFailed = false;
       quietFails = 0;
       setSync("متصل بقاعدة البيانات المشتركة • آخر تحديث " + new Date().toLocaleTimeString("ar-EG"), true);
@@ -690,6 +739,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       stopRealtime();
       realtimeChannel = db.channel("purchase-requests-changes")
         .on("postgres_changes", { event: "*", schema: "public", table: TABLE }, function(){ loadRequests(true); })
+        .on("postgres_changes", { event: "*", schema: "public", table: ITEMS_TABLE }, function(){ loadRequests(true); })
         .subscribe(function(status){
           if(status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED"){
             console.warn("Realtime غير متاح حاليًا (" + status + ") — الاعتماد على التحديث كل 30 ثانية.");
@@ -784,7 +834,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       var st = statusOf(r).key;
       if(filter!=="all" && st!==filter) return false;
       if(q){
-        var hay = (r.number+" "+r.desc+" "+(r.notes||"")+" "+fmt(r.date)+" "+fmt(r.quotes)+" "+fmt(r.decision)+" "+fmt(r.exec)+" "+statusOf(r).label).toLowerCase();
+        var hay = (r.number+" "+r.desc+" "+itemsText(r)+" "+(r.notes||"")+" "+fmt(r.date)+" "+fmt(r.quotes)+" "+fmt(r.decision)+" "+fmt(r.exec)+" "+statusOf(r).label).toLowerCase();
         if(hay.indexOf(q)===-1) return false;
       }
       return true;
@@ -848,7 +898,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         '<td class="num">'+(i+1)+"</td>"+
         '<td class="num"><b>'+esc(r.number)+"</b></td>"+
         '<td class="date">'+esc(fmt(r.date))+"</td>"+
-        '<td class="desc">'+esc(r.desc)+"</td>"+
+        '<td class="desc">'+esc(r.desc)+itemsHtml(r)+"</td>"+
         '<td class="date">'+esc(fmt(r.quotes))+"</td>"+
         '<td class="date">'+esc(fmt(r.decision))+"</td>"+
         '<td class="date">'+esc(fmt(r.exec))+"</td>"+
@@ -861,7 +911,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       var st = statusOf(r);
       return '<article class="req-card">'+
         '<div class="top"><div><span class="no">'+(i+1)+". طلب رقم "+esc(r.number)+'</span><div style="color:var(--muted);font-size:13px">تاريخ الطلب: '+esc(fmt(r.date))+'</div></div>'+badge(st)+"</div>"+
-        '<p class="desc">'+esc(r.desc)+"</p>"+
+        '<p class="desc">'+esc(r.desc)+itemsHtml(r)+"</p>"+
         '<div class="kv">'+
           "<div><span>تاريخ عروض الأسعار</span><b>"+esc(fmt(r.quotes))+"</b></div>"+
           "<div><span>تاريخ البت</span><b>"+esc(fmt(r.decision))+"</b></div>"+
@@ -886,6 +936,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   }
   function resetForm(){
     $("reqForm").reset();
+    setFormItems([]);
     editingId = null;
     formSnapshot = null;
     $("formTitle").textContent = "تسجيل طلب شراء";
@@ -913,6 +964,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   }
   function removeLocal(id){
     requests = requests.filter(function(r){ return String(r.id)!==String(id); });
+    delete itemsByRequest[String(id)];
     render();
   }
   function openForm(){
@@ -931,11 +983,61 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   function isFormOpen(){ return $("formOverlay").classList.contains("open"); }
   var formSnapshot = null;
   function snapshotForm(){
-    formSnapshot = ["fNumber","fDate","fDesc","fNotes"].map(function(id){ return $(id).value.trim(); }).join("\u0000");
+    formSnapshot = ["fNumber","fDate","fDesc","fNotes"].map(function(id){ return $(id).value.trim(); }).join("\u0000") + "\u0000" + itemsSnapshot();
   }
+  /* ---------- محرر أصناف الطلب ---------- */
+  var formItems = [];
+  function renderItemsEditor(){
+    var box = $("itemsEditor");
+    box.innerHTML = formItems.map(function(it, i){
+      return '<div class="item-row">' +
+        '<input type="text" placeholder="رقم الصنف" maxlength="50" data-item-num="'+i+'" value="'+esc(it.number)+'">' +
+        '<input type="text" placeholder="اسم الصنف" maxlength="200" data-item-name="'+i+'" value="'+esc(it.name)+'">' +
+        '<button type="button" class="btn btn-outline btn-sm" data-item-del="'+i+'" aria-label="حذف الصنف">✕</button>' +
+      '</div>';
+    }).join("");
+  }
+  function setFormItems(list){
+    formItems = (list || []).map(function(it){ return {number: it.number || "", name: it.name || ""}; });
+    if(!formItems.length) formItems = [{number:"", name:""}];
+    renderItemsEditor();
+  }
+  function collectFormItems(){
+    var out = [];
+    for(var i=0;i<formItems.length;i++){
+      var n = (formItems[i].number || "").trim();
+      var m = (formItems[i].name || "").trim();
+      if(!n && !m) continue;
+      if(!n || !m) return null;
+      out.push({number:n, name:m});
+    }
+    return out;
+  }
+  function itemsSnapshot(){
+    return (collectFormItems() || []).map(function(it){ return it.number + "|" + it.name; }).join("\u0001");
+  }
+  $("itemsEditor").addEventListener("input", function(e){
+    var n = e.target.getAttribute("data-item-num");
+    var m = e.target.getAttribute("data-item-name");
+    if(n !== null) formItems[Number(n)].number = e.target.value;
+    if(m !== null) formItems[Number(m)].name = e.target.value;
+  });
+  $("itemsEditor").addEventListener("click", function(e){
+    var d = e.target.closest("[data-item-del]");
+    if(!d) return;
+    formItems.splice(Number(d.getAttribute("data-item-del")), 1);
+    renderItemsEditor();
+  });
+  $("addItemBtn").addEventListener("click", function(){
+    formItems.push({number:"", name:""});
+    renderItemsEditor();
+    var inputs = $("itemsEditor").querySelectorAll("input");
+    if(inputs.length) inputs[inputs.length-2].focus();
+  });
+  setFormItems([]);
   function formHasData(){
-    var cur = ["fNumber","fDate","fDesc","fNotes"].map(function(id){ return $(id).value.trim(); }).join("\u0000");
-    if(formSnapshot === null) return ["fNumber","fDate","fDesc","fNotes"].some(function(id){ return $(id).value.trim() !== ""; });
+    var cur = ["fNumber","fDate","fDesc","fNotes"].map(function(id){ return $(id).value.trim(); }).join("\u0000") + "\u0000" + itemsSnapshot();
+    if(formSnapshot === null) return ["fNumber","fDate","fDesc","fNotes"].some(function(id){ return $(id).value.trim() !== ""; }) || (collectFormItems() || []).length > 0;
     return cur !== formSnapshot; /* اسأل فقط عند وجود تغيير فعلي عن القيم التي فُتح بها النموذج */
   }
   function confirmCloseForm(){
@@ -975,18 +1077,29 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       notes:$("fNotes").value.trim()
     };
     if(!datesInOrder(data)){ showMsg("ترتيب التواريخ غير منطقي: لازم يكون تاريخ الطلب ثم عروض الأسعار ثم البت ثم التنفيذ.", false); return; }
+    var items = collectFormItems();
+    if(items === null){ showMsg("كل صنف لازم له رقم صنف واسم صنف.", false); return; }
     $("saveBtn").disabled = true;
     try{
+      var savedRow, savedId;
       if(editingId){
         if(!isAdmin()){ showMsg("التعديل متاح لحساب الأدمن فقط.", false); return; }
-        var saved = await dbUpdate(editingId, data);
-        upsertLocal(saved);
+        savedRow = await dbUpdate(editingId, data);
+        savedId = editingId;
         showMsg("تم حفظ التعديل في قاعدة البيانات المشتركة.", true);
       } else {
-        var created = await dbInsert(data);
-        upsertLocal(created);
+        savedRow = await dbInsert(data);
+        savedId = savedRow.id;
         showMsg("تم تسجيل الطلب في قاعدة البيانات المشتركة.", true);
       }
+      try{
+        await saveItems(savedId, items, !!editingId);
+        itemsByRequest[String(savedId)] = items.map(function(it,i){ return {id: "tmp"+i, request_id: savedId, number: it.number, name: it.name}; });
+      }catch(e2){
+        showToast("تم حفظ الطلب لكن تعذّر حفظ الأصناف: " + friendlyErr(e2), false);
+        console.error(e2);
+      }
+      upsertLocal(savedRow);
       await loadRequests(true);
       /* أبقِ رسالة النجاح ظاهرة ثانية قبل إغلاق النافذة */
       setTimeout(function(){ resetForm(); closeForm(); }, 1200);
@@ -1005,6 +1118,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       if(r){
         $("fNumber").value=r.number; $("fDate").value=r.date; $("fDesc").value=r.desc;
         $("fNotes").value=r.notes||"";
+        setFormItems(itemsOf(r));
         snapshotForm();
       }
     } else {
@@ -1110,6 +1224,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       editingId = r.id;
       $("fNumber").value=r.number; $("fDate").value=r.date; $("fDesc").value=r.desc;
       $("fNotes").value=r.notes||"";
+      setFormItems(itemsOf(r));
       $("formTitle").textContent = "تعديل الطلب رقم "+r.number;
       $("saveBtn").textContent = "حفظ التعديل";
       $("cancelEdit").style.display = "inline-flex";
@@ -1162,7 +1277,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var q = comboQuery();
     if(!q){ hideCombo(); return; }
     var list = requests.filter(function(r){
-      var hay = (r.number+" "+r.desc+" "+(r.notes||"")+" "+fmt(r.date)+" "+fmt(r.quotes)+" "+fmt(r.decision)+" "+fmt(r.exec)+" "+statusOf(r).label).toLowerCase();
+      var hay = (r.number+" "+r.desc+" "+itemsText(r)+" "+(r.notes||"")+" "+fmt(r.date)+" "+fmt(r.quotes)+" "+fmt(r.decision)+" "+fmt(r.exec)+" "+statusOf(r).label).toLowerCase();
       return hay.indexOf(q) !== -1;
     }).slice(0, 8);
     showComboList(list);
@@ -1274,7 +1389,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var rows = list.map(function(r,i){
       var printNotes = r.exec ? ((r.notes ? r.notes + " — " : "") + "تم التنفيذ") : (r.notes || "");
       return "<tr><td style='text-align:center'>"+(i+1)+"</td><td style='text-align:center'><b>"+esc(r.number)+"</b></td>"+
-        "<td style='text-align:center'>"+fmt(r.date)+"</td><td>"+esc(r.desc)+"</td>"+
+        "<td style='text-align:center'>"+fmt(r.date)+"</td><td>"+esc(r.desc)+itemsHtml(r)+"</td>"+
         "<td style='text-align:center'>"+fmt(r.quotes)+"</td><td style='text-align:center'>"+fmt(r.decision)+"</td>"+
         "<td style='text-align:center'>"+fmt(r.exec)+"</td><td>"+esc(printNotes)+"</td></tr>";
     }).join("");
@@ -1316,7 +1431,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   /* ---------- تصدير / استيراد Excel (CSV) ---------- */
   function exportCSV(){
     var list = requests.slice(); /* التصدير للسجل الكامل دائمًا مثل الطباعة، وليس المُصفّى فقط */
-    var head = ["م","رقم الطلب","تاريخ الطلب","وصف وبيانات الطلب","تاريخ عروض الأسعار","تاريخ البت","تاريخ التنفيذ","الحالة","ملاحظات"];
+    var head = ["م","رقم الطلب","تاريخ الطلب","وصف وبيانات الطلب","الأصناف","تاريخ عروض الأسعار","تاريخ البت","تاريخ التنفيذ","الحالة","ملاحظات"];
     /* تعقيم حقن صيغ Excel: قيمة تبدأ بـ = + - @ | % تُسبق بفاصلة عليا */
     function cell(v){
       var s = String(v==null?"":v);
@@ -1325,7 +1440,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     }
     var lines = [head.map(cell).join(",")];
     list.forEach(function(r,i){
-      lines.push([i+1, r.number, fmt(r.date), r.desc, fmt(r.quotes), fmt(r.decision), fmt(r.exec), statusOf(r).label, r.notes||""].map(cell).join(","));
+      lines.push([i+1, r.number, fmt(r.date), r.desc, itemsCsv(r), fmt(r.quotes), fmt(r.decision), fmt(r.exec), statusOf(r).label, r.notes||""].map(cell).join(","));
     });
     var blob = new Blob(["\ufeff"+lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
     var a = document.createElement("a");
