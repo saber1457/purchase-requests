@@ -91,6 +91,8 @@ a{color:var(--accent)}
 .item-row{display:grid;grid-template-columns:1fr 2fr auto;gap:8px;margin-bottom:0;align-items:center}
 .item-row-wrap{position:relative;margin-bottom:8px}
 .item-row input{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:16px}
+.item-num-wrap{position:relative}
+.item-num-wrap input{padding-right:36px}
 .items-list{margin-top:6px;font-size:13px;color:var(--muted);line-height:1.7}
 .items-list .item-line{display:block}
 .items-list b{color:var(--ink)}
@@ -1045,7 +1047,10 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     box.innerHTML = formItems.map(function(it, i){
       return '<div class="item-row-wrap">' +
         '<div class="item-row">' +
+        '<div class="item-num-wrap">' +
         '<input type="text" placeholder="رقم الصنف" maxlength="50" autocomplete="off" data-item-num="'+i+'" value="'+esc(it.number)+'">' +
+        '<button type="button" class="combo-toggle" data-item-arrow="'+i+'" aria-label="عرض كل الأصناف" title="عرض كل الأصناف">▾</button>' +
+        '</div>' +
         '<input type="text" placeholder="اسم الصنف" maxlength="200" data-item-name="'+i+'" value="'+esc(it.name)+'">' +
         '<button type="button" class="btn btn-outline btn-sm" data-item-del="'+i+'" aria-label="حذف الصنف">✕</button>' +
         '</div>' +
@@ -1129,13 +1134,24 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     }
     hideAllItemSuggest();
   }
+  /* سهم ▾ في خانة رقم الصنف: يعرض كل أصناف الدليل للاختيار منها */
+  function showAllItemSuggest(idx){
+    var rows = document.querySelectorAll(".item-row");
+    var row = rows[idx];
+    var inp = row ? row.querySelector("[data-item-num]") : null;
+    if(inp){ inp.focus(); showItemSuggest(inp, true); }
+  }
   $("itemsEditor").addEventListener("mousedown", function(e){
+    var a = e.target.closest("[data-item-arrow]");
+    if(a){ e.preventDefault(); showAllItemSuggest(Number(a.getAttribute("data-item-arrow"))); return; }
     var s = e.target.closest(".combo-item[data-sug-num]");
     if(!s) return;
     e.preventDefault();
     pickItemSuggestion(s);
   });
   $("itemsEditor").addEventListener("click", function(e){
+    var a = e.target.closest("[data-item-arrow]");
+    if(a){ showAllItemSuggest(Number(a.getAttribute("data-item-arrow"))); return; }
     var s = e.target.closest(".combo-item[data-sug-num]");
     if(!s) return;
     pickItemSuggestion(s);
@@ -1144,13 +1160,13 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   function hideAllItemSuggest(){
     Array.prototype.forEach.call(document.querySelectorAll(".item-suggest"), function(box){ box.hidden = true; box.innerHTML = ""; });
   }
-  function showItemSuggest(input){
+  function showItemSuggest(input, showAll){
     var wrap = input.closest(".item-row-wrap");
     if(!wrap) return;
     var box = wrap.querySelector(".item-suggest");
     if(!box) return;
     var q = (input.value || "").trim().toLowerCase();
-    var list = catalog.filter(function(it){
+    var list = showAll ? catalog.slice(0, 50) : catalog.filter(function(it){
       return !q || (it.number + " " + it.name).toLowerCase().indexOf(q) !== -1;
     }).slice(0, 8);
     if(!list.length){ box.hidden = true; box.innerHTML = ""; return; }
