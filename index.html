@@ -1055,8 +1055,8 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     }).join("");
   }
   function setFormItems(list){
-    formItems = (list || []).map(function(it){ return {number: it.number || "", name: it.name || ""}; });
-    if(!formItems.length) formItems = [{number:"", name:""}];
+    formItems = (list || []).map(function(it){ return {number: it.number || "", name: it.name || "", fresh:false}; });
+    if(!formItems.length) formItems = [{number:"", name:"", fresh:true}];
     renderItemsEditor();
   }
   function collectFormItems(){
@@ -1126,7 +1126,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var idx = Number(s.getAttribute("data-sug-row"));
     var num = s.getAttribute("data-sug-num");
     var name = s.getAttribute("data-sug-name");
-    var wasEmpty = !(formItems[idx].number || "").trim() && !(formItems[idx].name || "").trim();
+    var wasEmpty = !!formItems[idx].fresh;
     formItems[idx].number = num;
     formItems[idx].name = name;
     var rows = document.querySelectorAll(".item-row");
@@ -1141,7 +1141,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     hideAllItemSuggest();
     /* الصف كان فاضي قبل الاختيار: الصنف اتسجل في الوصف بس، فالصف يفضى ويرجع جاهز لاختيار الصنف اللي بعده */
     if(wasEmpty){
-      formItems[idx] = {number:"", name:""};
+      formItems[idx] = {number:"", name:"", fresh:true};
       if(row){
         var ni2 = row.querySelector("[data-item-num]");
         var mi2 = row.querySelector("[data-item-name]");
@@ -1205,13 +1205,13 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var row = e.target.closest(".item-row");
     var nameInput = row ? row.querySelector("[data-item-name]") : null;
     if(nameInput){
-      var hadName = !!(formItems[idx].name || "").trim();
+      var hadName = !formItems[idx].fresh;
       nameInput.value = found.name;
       formItems[idx].name = found.name;
       appendItemNameToDesc(found.name);
       /* الصف كان فاضي قبل كتابة الرقم: الصنف اتسجل في الوصف بس، فالصف يفضى ويرجع جاهز لاختيار الصنف اللي بعده */
       if(!hadName){
-        formItems[idx] = {number:"", name:""};
+        formItems[idx] = {number:"", name:"", fresh:true};
         nameInput.value = "";
         e.target.value = "";
       }
@@ -1239,7 +1239,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         var rowIdx = Number(el.getAttribute("data-item-name"));
         var row = formItems[rowIdx];
         if(rowIdx === formItems.length - 1 && row && (String(row.number).trim() || String(row.name).trim())){
-          formItems.push({number:"", name:""});
+          formItems.push({number:"", name:"", fresh:true});
           renderItemsEditor();
           var inputs = $("itemsEditor").querySelectorAll("input");
           if(inputs.length) inputs[inputs.length-2].focus();
@@ -1283,7 +1283,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     renderItemsEditor();
   });
   $("addItemBtn").addEventListener("click", function(){
-    formItems.push({number:"", name:""});
+    formItems.push({number:"", name:"", fresh:true});
     renderItemsEditor();
     var inputs = $("itemsEditor").querySelectorAll("input");
     if(inputs.length) inputs[inputs.length-2].focus();
