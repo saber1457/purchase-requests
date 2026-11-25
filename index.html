@@ -88,7 +88,8 @@ a{color:var(--accent)}
 .field label{display:block;font-weight:800;font-size:14px;margin-bottom:6px}
 .field input,.field textarea,.field select{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:16px}
 .field textarea{min-height:74px;resize:vertical}
-.item-row{display:grid;grid-template-columns:1fr 2fr auto;gap:8px;margin-bottom:8px;align-items:center}
+.item-row{display:grid;grid-template-columns:1fr 2fr auto;gap:8px;margin-bottom:0;align-items:center}
+.item-row-wrap{position:relative;margin-bottom:8px}
 .item-row input{width:100%;border:1.5px solid var(--line);border-radius:10px;background:var(--surface2);color:var(--ink);padding:10px 12px;font-size:16px}
 .items-list{margin-top:6px;font-size:13px;color:var(--muted);line-height:1.7}
 .items-list .item-line{display:block}
@@ -320,7 +321,6 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
         <label>أصناف الطلب</label>
         <div id="itemsEditor"></div>
         <button class="btn btn-outline btn-sm" type="button" id="addItemBtn" style="margin-top:4px">+ إضافة صنف</button>
-        <datalist id="catalogData"></datalist>
       </div>
       <div class="field" style="margin-top:12px">
         <label for="fNotes">ملاحظات</label>
@@ -595,6 +595,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   var editingId = null;
   var filter = "all";
   var pendingDelete = null;
+  var pendingCatDelete = null;
   var stepTargetId = null;
   var stepField = null;
   var currentUser = null;
@@ -1036,10 +1037,13 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   function renderItemsEditor(){
     var box = $("itemsEditor");
     box.innerHTML = formItems.map(function(it, i){
-      return '<div class="item-row">' +
-        '<input type="text" placeholder="رقم الصنف" maxlength="50" list="catalogData" data-item-num="'+i+'" value="'+esc(it.number)+'">' +
+      return '<div class="item-row-wrap">' +
+        '<div class="item-row">' +
+        '<input type="text" placeholder="رقم الصنف" maxlength="50" autocomplete="off" data-item-num="'+i+'" value="'+esc(it.number)+'">' +
         '<input type="text" placeholder="اسم الصنف" maxlength="200" data-item-name="'+i+'" value="'+esc(it.name)+'">' +
         '<button type="button" class="btn btn-outline btn-sm" data-item-del="'+i+'" aria-label="حذف الصنف">✕</button>' +
+        '</div>' +
+        '<div class="combo-list item-suggest" hidden></div>' +
       '</div>';
     }).join("");
   }
@@ -1065,10 +1069,58 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   $("itemsEditor").addEventListener("input", function(e){
     var n = e.target.getAttribute("data-item-num");
     var m = e.target.getAttribute("data-item-name");
-    if(n !== null) formItems[Number(n)].number = e.target.value;
+    if(n !== null){ formItems[Number(n)].number = e.target.value; showItemSuggest(e.target); }
     if(m !== null) formItems[Number(m)].name = e.target.value;
   });
-  /* اختيار رقم صنف من الدليل يملأ اسم الصنف تلقائيًا لو خانة الاسم فاضية */
+  $("itemsEditor").addEventListener("focusin", function(e){
+    if(e.target.getAttribute("data-item-num") !== null) showItemSuggest(e.target);
+  });
+  $("itemsEditor").addEventListener("focusout", function(){ setTimeout(hideAllItemSuggest, 150); });
+  $("itemsEditor").addEventListener("keydown", function(e){
+    if(e.key === "Escape") hideAllItemSuggest();
+  });
+  $("itemsEditor").addEventListener("mousedown", function(e){
+    var s = e.target.closest(".combo-item[data-sug-num]");
+    if(!s) return;
+    e.preventDefault();
+    var idx = Number(s.getAttribute("data-sug-row"));
+    var num = s.getAttribute("data-sug-num");
+    var name = s.getAttribute("data-sug-name");
+    formItems[idx].number = num;
+    formItems[idx].name = name;
+    var rows = document.querySelectorAll(".item-row");
+    var row = rows[idx];
+    if(row){
+      var ni = row.querySelector("[data-item-num]");
+      var mi = row.querySelector("[data-item-name]");
+      if(ni) ni.value = num;
+      if(mi) mi.value = name;
+    }
+    hideAllItemSuggest();
+  });
+  /* قائمة اقتراحات الدليل تحت خانة رقم الصنف في نموذج الطلب */
+  function hideAllItemSuggest(){
+    Array.prototype.forEach.call(document.querySelectorAll(".item-suggest"), function(box){ box.hidden = true; box.innerHTML = ""; });
+  }
+  function showItemSuggest(input){
+    var wrap = input.closest(".item-row-wrap");
+    if(!wrap) return;
+    var box = wrap.querySelector(".item-suggest");
+    if(!box) return;
+    var q = (input.value || "").trim().toLowerCase();
+    var list = catalog.filter(function(it){
+      return !q || (it.number + " " + it.name).toLowerCase().indexOf(q) !== -1;
+    }).slice(0, 8);
+    if(!list.length){ box.hidden = true; box.innerHTML = ""; return; }
+    var idx = Number(input.getAttribute("data-item-num"));
+    box.innerHTML = list.map(function(it){
+      return '<button type="button" class="combo-item" data-sug-num="' + esc(it.number) + '" data-sug-name="' + esc(it.name) + '" data-sug-row="' + idx + '">' +
+        '<span class="c-num">رقم الصنف ' + esc(it.number) + '</span>' +
+        '<span class="c-desc">' + esc(it.name) + '</span></button>';
+    }).join("");
+    box.hidden = false;
+  }
+  /* تغيير رقم الصنف لرقم موجود في الدليل يحدّث اسم الصنف لاسم الدليل */
   $("itemsEditor").addEventListener("change", function(e){
     var n = e.target.getAttribute("data-item-num");
     if(n === null) return;
@@ -1077,7 +1129,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var idx = Number(n);
     var row = e.target.closest(".item-row");
     var nameInput = row ? row.querySelector("[data-item-name]") : null;
-    if(nameInput && !nameInput.value.trim()){
+    if(nameInput){
       nameInput.value = found.name;
       formItems[idx].name = found.name;
     }
@@ -1256,7 +1308,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     if(e.key!=="Escape") return;
     if($("stepOverlay").classList.contains("open")){ closeStepModal(); return; }
     if($("printOverlay").classList.contains("open")){ $("printOverlay").classList.remove("open"); updateBodyLock(); return; }
-    if($("confirmOverlay").classList.contains("open")){ pendingDelete=null; $("confirmOverlay").classList.remove("open"); updateBodyLock(); return; }
+    if($("confirmOverlay").classList.contains("open")){ pendingDelete=null; pendingCatDelete=null; $("confirmOverlay").classList.remove("open"); updateBodyLock(); return; }
     if(isFormOpen()){ confirmCloseForm(); }
   });
 
@@ -1300,8 +1352,21 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       updateBodyLock();
     }
   });
-  $("confirmNo").addEventListener("click", function(){ pendingDelete=null; $("confirmOverlay").classList.remove("open"); updateBodyLock(); });
+  $("confirmNo").addEventListener("click", function(){ pendingDelete=null; pendingCatDelete=null; $("confirmOverlay").classList.remove("open"); updateBodyLock(); });
   $("confirmYes").addEventListener("click", async function(){
+    if(pendingCatDelete){
+      var cid = pendingCatDelete;
+      pendingCatDelete = null;
+      $("confirmOverlay").classList.remove("open");
+      updateBodyLock();
+      try{
+        var cres = await db.from(CATALOG_TABLE).delete().eq("id", cid);
+        if(cres.error) throw cres.error;
+        await loadCatalog();
+        showToast("تم حذف الصنف من الدليل.", true);
+      }catch(err){ showToast("تعذّر الحذف: " + friendlyErr(err), false); console.error(err); }
+      return;
+    }
     if(!pendingDelete || !isAdmin()) return;
     var id = pendingDelete;
     pendingDelete = null;
@@ -1626,15 +1691,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       if(res.error) throw res.error;
       catalog = (res.data || []).map(function(row){ return { id: row.id, number: row.item_number || "", name: row.item_name || "" }; });
       renderCatalog();
-      renderCatalogDatalist();
     }catch(err){ console.error("catalog load failed", err); }
-  }
-  function renderCatalogDatalist(){
-    var dl = $("catalogData");
-    if(!dl) return;
-    dl.innerHTML = catalog.map(function(it){
-      return '<option value="' + esc(it.number) + '">' + esc(it.name) + '</option>';
-    }).join("");
   }
   function renderCatalog(){
     var q = ($("catSearch").value || "").trim().toLowerCase();
@@ -1730,17 +1787,16 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     };
     reader.readAsText(file, "UTF-8");
   });
-  $("catTbody").addEventListener("click", async function(e){
+  $("catTbody").addEventListener("click", function(e){
     var b = e.target.closest("[data-cat-del]");
     if(!b || !isAdmin()) return;
     var id = b.getAttribute("data-cat-del");
-    if(!confirm("سيتم حذف هذا الصنف من الدليل نهائيًا. هل أنت متأكد؟")) return;
-    try{
-      var res = await db.from(CATALOG_TABLE).delete().eq("id", id);
-      if(res.error) throw res.error;
-      await loadCatalog();
-      showToast("تم حذف الصنف من الدليل.", true);
-    }catch(err){ showToast("تعذّر الحذف: " + friendlyErr(err), false); console.error(err); }
+    var it = null;
+    catalog.forEach(function(x){ if(String(x.id)===String(id)) it = x; });
+    pendingCatDelete = id;
+    $("confirmText").textContent = "هيتم حذف الصنف رقم " + (it ? it.number : "") + (it ? " (" + it.name + ")" : "") + " نهائيًا من الدليل.";
+    $("confirmOverlay").classList.add("open");
+    updateBodyLock();
   });
 
   /* ---------- إدارة الحسابات (أدمن فقط) ---------- */
