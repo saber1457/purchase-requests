@@ -839,6 +839,16 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     if(!y || !m || !day || dt.getFullYear()!==y || dt.getMonth()!==m-1 || dt.getDate()!==day) return "—";
     return p[2]+"/"+p[1]+"/"+p[0];
   }
+  /* صيغة العرض في الصفحة: سنة/شهر/يوم، فتظهر في الاتجاه من اليمين للشمال واليوم على اليمين */
+  function fmtD(d){
+    if(!d) return "—";
+    var p = String(d).split("-");
+    if(p.length!==3) return d;
+    var y = Number(p[0]), m = Number(p[1]), day = Number(p[2]);
+    var dt = new Date(y, m-1, day);
+    if(!y || !m || !day || dt.getFullYear()!==y || dt.getMonth()!==m-1 || dt.getDate()!==day) return "—";
+    return p[0]+"/"+p[1]+"/"+p[2];
+  }
   function esc(s){
     return String(s==null?"":s).replace(/[&<>"']/g,function(c){
       return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
@@ -885,7 +895,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       var st = statusOf(r).key;
       if(filter!=="all" && st!==filter) return false;
       if(q){
-        var hay = (r.number+" "+r.desc+" "+itemsText(r)+" "+(r.notes||"")+" "+fmt(r.date)+" "+fmt(r.quotes)+" "+fmt(r.decision)+" "+fmt(r.exec)+" "+statusOf(r).label).toLowerCase();
+        var hay = (r.number+" "+r.desc+" "+itemsText(r)+" "+(r.notes||"")+" "+fmt(r.date)+" "+fmt(r.quotes)+" "+fmt(r.decision)+" "+fmt(r.exec)+" "+fmtD(r.date)+" "+fmtD(r.quotes)+" "+fmtD(r.decision)+" "+fmtD(r.exec)+" "+statusOf(r).label).toLowerCase();
         if(hay.indexOf(q)===-1) return false;
       }
       return true;
@@ -900,7 +910,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var meta = STEP_META[field];
     var val = r[field] || "";
     var has = !!val;
-    return '<button type="button" class="step-mini '+field+(has?" has":"")+'" data-step-open="'+field+'" data-step-id="'+esc(String(r.id))+'" aria-label="تسجيل '+esc(meta.label)+' لطلب رقم '+esc(r.number)+'" title="تسجيل '+esc(meta.label)+' لوحده لطلب رقم '+esc(r.number)+'">'+esc(meta.buttonLabel)+'<span>'+(has?("✓ "+fmt(val)):"+ تسجيل")+"</span></button>";
+    return '<button type="button" class="step-mini '+field+(has?" has":"")+'" data-step-open="'+field+'" data-step-id="'+esc(String(r.id))+'" aria-label="تسجيل '+esc(meta.label)+' لطلب رقم '+esc(r.number)+'" title="تسجيل '+esc(meta.label)+' لوحده لطلب رقم '+esc(r.number)+'">'+esc(meta.buttonLabel)+'<span>'+(has?("✓ "+fmtD(val)):"+ تسجيل")+"</span></button>";
   }
   function actionsHtml(r){
     if(!isAdmin()) return "";
@@ -948,11 +958,11 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       return "<tr>"+
         '<td class="num">'+(i+1)+"</td>"+
         '<td class="num"><b>'+esc(r.number)+"</b></td>"+
-        '<td class="date">'+esc(fmt(r.date))+"</td>"+
+        '<td class="date">'+esc(fmtD(r.date))+"</td>"+
         '<td class="desc">'+esc(r.desc)+itemsHtml(r)+"</td>"+
-        '<td class="date">'+esc(fmt(r.quotes))+"</td>"+
-        '<td class="date">'+esc(fmt(r.decision))+"</td>"+
-        '<td class="date">'+esc(fmt(r.exec))+"</td>"+
+        '<td class="date">'+esc(fmtD(r.quotes))+"</td>"+
+        '<td class="date">'+esc(fmtD(r.decision))+"</td>"+
+        '<td class="date">'+esc(fmtD(r.exec))+"</td>"+
         "<td>"+badge(st)+"</td>"+
         '<td class="desc">'+esc(r.notes||"—")+"</td>"+
         "<td>"+actionsHtml(r)+"</td></tr>";
@@ -961,12 +971,12 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     cards.innerHTML = list.map(function(r,i){
       var st = statusOf(r);
       return '<article class="req-card">'+
-        '<div class="top"><div><span class="no">'+(i+1)+". طلب رقم "+esc(r.number)+'</span><div style="color:var(--muted);font-size:13px">تاريخ الطلب: '+esc(fmt(r.date))+'</div></div>'+badge(st)+"</div>"+
+        '<div class="top"><div><span class="no">'+(i+1)+". طلب رقم "+esc(r.number)+'</span><div style="color:var(--muted);font-size:13px">تاريخ الطلب: '+esc(fmtD(r.date))+'</div></div>'+badge(st)+"</div>"+
         '<p class="desc">'+esc(r.desc)+itemsHtml(r)+"</p>"+
         '<div class="kv">'+
-          "<div><span>تاريخ عروض الأسعار</span><b>"+esc(fmt(r.quotes))+"</b></div>"+
-          "<div><span>تاريخ البت</span><b>"+esc(fmt(r.decision))+"</b></div>"+
-          "<div><span>تاريخ التنفيذ</span><b>"+esc(fmt(r.exec))+"</b></div>"+
+          "<div><span>تاريخ عروض الأسعار</span><b>"+esc(fmtD(r.quotes))+"</b></div>"+
+          "<div><span>تاريخ البت</span><b>"+esc(fmtD(r.decision))+"</b></div>"+
+          "<div><span>تاريخ التنفيذ</span><b>"+esc(fmtD(r.exec))+"</b></div>"+
           "<div><span>الحالة</span><b>"+esc(st.label)+"</b></div>"+
         "</div>"+
         (r.notes?'<p class="notes">ملاحظات: '+esc(r.notes)+"</p>":"")+
@@ -1444,7 +1454,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       upsertLocal(updated);
       closeStepModal();
       await loadRequests(true);
-      if(isFormOpen()) showMsg("تم تسجيل "+label+" للطلب رقم "+num+" بتاريخ "+fmt(v)+".", true);
+      if(isFormOpen()) showMsg("تم تسجيل "+label+" للطلب رقم "+num+" بتاريخ "+fmtD(v)+".", true);
       else showToast("تم تسجيل "+label+" للطلب رقم "+num+".", true);
     }catch(err){ showStepMsg("تعذّر الحفظ: " + friendlyErr(err), false); console.error(err); }
     finally{ $("stepSave").disabled = false; }
@@ -1548,7 +1558,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var q = comboQuery();
     if(!q){ hideCombo(); return; }
     var list = requests.filter(function(r){
-      var hay = (r.number+" "+r.desc+" "+itemsText(r)+" "+(r.notes||"")+" "+fmt(r.date)+" "+fmt(r.quotes)+" "+fmt(r.decision)+" "+fmt(r.exec)+" "+statusOf(r).label).toLowerCase();
+      var hay = (r.number+" "+r.desc+" "+itemsText(r)+" "+(r.notes||"")+" "+fmt(r.date)+" "+fmt(r.quotes)+" "+fmt(r.decision)+" "+fmt(r.exec)+" "+fmtD(r.date)+" "+fmtD(r.quotes)+" "+fmtD(r.decision)+" "+fmtD(r.exec)+" "+statusOf(r).label).toLowerCase();
       return hay.indexOf(q) !== -1;
     }).slice(0, 8);
     showComboList(list);
@@ -1563,7 +1573,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
       return '<button type="button" class="combo-item" role="option" id="comboOpt'+i+'" data-combo-idx="'+i+'">'+
         '<span class="c-num">طلب رقم '+esc(r.number)+'</span>'+
         '<span class="c-desc">'+esc(r.desc)+'</span>'+
-        '<span class="c-meta">'+esc(fmt(r.date))+' • '+esc(statusOf(r).label)+'</span></button>';
+        '<span class="c-meta">'+esc(fmtD(r.date))+' • '+esc(statusOf(r).label)+'</span></button>';
     }).join("");
     box.hidden = false;
     $("q").setAttribute("aria-expanded", "true");
@@ -1652,7 +1662,7 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
   function buildPrintHTML(){
     var list = requests.slice(); /* الطباعة تعرض السجل كاملًا دائمًا، بغض النظر عن البحث أو الفلتر */
     var today = new Date();
-    var todayStr = String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+today.getFullYear();
+    var todayStr = today.getFullYear()+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+String(today.getDate()).padStart(2,"0");
     var head = "<thead><tr>"+
       "<th rowspan='2'>م</th><th rowspan='2'>رقم الطلب</th><th rowspan='2'>تاريخ الطلب</th><th rowspan='2'>وصف وبيانات الطلب</th>"+
       "<th colspan='3'>موقف الطلب</th><th rowspan='2'>ملاحظات</th></tr>"+
@@ -1660,9 +1670,9 @@ footer{color:var(--muted);font-size:13px;text-align:center;margin-top:22px}
     var rows = list.map(function(r,i){
       var printNotes = r.exec ? ((r.notes ? r.notes + " — " : "") + "تم التنفيذ") : (r.notes || "");
       return "<tr><td style='text-align:center'>"+(i+1)+"</td><td style='text-align:center'><b>"+esc(r.number)+"</b></td>"+
-        "<td style='text-align:center'>"+fmt(r.date)+"</td><td>"+esc(r.desc)+itemsHtml(r)+"</td>"+
-        "<td style='text-align:center'>"+fmt(r.quotes)+"</td><td style='text-align:center'>"+fmt(r.decision)+"</td>"+
-        "<td style='text-align:center'>"+fmt(r.exec)+"</td><td>"+esc(printNotes)+"</td></tr>";
+        "<td style='text-align:center'>"+fmtD(r.date)+"</td><td>"+esc(r.desc)+itemsHtml(r)+"</td>"+
+        "<td style='text-align:center'>"+fmtD(r.quotes)+"</td><td style='text-align:center'>"+fmtD(r.decision)+"</td>"+
+        "<td style='text-align:center'>"+fmtD(r.exec)+"</td><td>"+esc(printNotes)+"</td></tr>";
     }).join("");
     var table = loadFailed
       ? "<p style='text-align:center'><b>تعذّر تحميل البيانات — تحقق من الاتصال بالإنترنت ثم اضغط «تحديث»</b></p>"
